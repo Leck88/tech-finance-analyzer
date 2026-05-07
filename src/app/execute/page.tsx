@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react'
 
 type TaskStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -9,6 +9,14 @@ interface TaskResult {
   status: TaskStatus
   message: string
   data?: any
+}
+
+const taskInfo = {
+  github: { name: '🐙 GitHub 趋势', description: '获取全球 Top10 热门项目', endpoint: '/api/github' },
+  stock: { name: '📊 股票数据', description: '追踪技术对股价的影响', endpoint: '/api/stock' },
+  crypto: { name: '🪙 加密货币', description: 'BTC/ETH 实时数据分析', endpoint: '/api/crypto' },
+  gold: { name: '💛 黄金价格', description: '美元指数、利率、地缘政治', endpoint: '/api/crypto?type=gold' },
+  email: { name: '📧 发送邮件', description: 'HTML 格式化结果推送', endpoint: '/api/email' },
 }
 
 export default function ExecutePage() {
@@ -19,15 +27,18 @@ export default function ExecutePage() {
     gold: { status: 'idle', message: '等待执行' },
     email: { status: 'idle', message: '等待执行' },
   })
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [copied, setCopied] = useState<string | null>(null)
 
-  const runTask = async (taskName: string, endpoint: string) => {
+  const runTask = async (taskName: string) => {
+    const info = taskInfo[taskName as keyof typeof taskInfo]
     setTasks(prev => ({
       ...prev,
       [taskName]: { status: 'loading', message: '执行中...' }
     }))
 
     try {
-      const response = await fetch(endpoint)
+      const response = await fetch(info.endpoint)
       const result = await response.json()
 
       if (result.success) {
@@ -50,12 +61,9 @@ export default function ExecutePage() {
   }
 
   const runAll = async () => {
-    // 执行所有任务
-    await runTask('github', '/api/github')
-    await runTask('stock', '/api/stock')
-    await runTask('crypto', '/api/crypto')
-    await runTask('gold', '/api/crypto?type=gold')
-    await runTask('email', '/api/email')
+    for (const taskName of Object.keys(taskInfo)) {
+      await runTask(taskName)
+    }
   }
 
   const getStatusIcon = (status: TaskStatus) => {
@@ -64,6 +72,19 @@ export default function ExecutePage() {
       case 'success': return <CheckCircle className="w-5 h-5 text-green-500" />
       case 'error': return <XCircle className="w-5 h-5 text-red-500" />
       default: return <Clock className="w-5 h-5 text-gray-400" />
+    }
+  }
+
+  const toggleExpanded = (taskName: string) => {
+    setExpanded(prev => ({ ...prev, [taskName]: !prev[taskName] }))
+  }
+
+  const copyToClipboard = (taskName: string) => {
+    const data = tasks[taskName as keyof typeof tasks]?.data
+    if (data) {
+      navigator.clipboard.writeText(JSON.stringify(data, null, 2))
+      setCopied(taskName)
+      setTimeout(() => setCopied(null), 2000)
     }
   }
 
@@ -91,87 +112,86 @@ export default function ExecutePage() {
           </button>
         </div>
 
-        {/* 单独执行 */}
+        {/* 单独执行 - 卡片式展示 */}
         <div className="card mb-8">
           <h2 className="text-xl font-semibold mb-4">单独执行</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <button
-              onClick={() => runTask('github', '/api/github')}
-              disabled={tasks.github.status === 'loading'}
-              className="flex items-center gap-3 p-4 border rounded-xl hover:bg-blue-50 transition disabled:opacity-50"
-            >
-              {getStatusIcon(tasks.github.status)}
-              <div className="text-left">
-                <div className="font-semibold">🐙 GitHub 趋势</div>
-                <div className="text-sm text-gray-500">{tasks.github.message}</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => runTask('stock', '/api/stock')}
-              disabled={tasks.stock.status === 'loading'}
-              className="flex items-center gap-3 p-4 border rounded-xl hover:bg-green-50 transition disabled:opacity-50"
-            >
-              {getStatusIcon(tasks.stock.status)}
-              <div className="text-left">
-                <div className="font-semibold">📊 股票数据</div>
-                <div className="text-sm text-gray-500">{tasks.stock.message}</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => runTask('crypto', '/api/crypto')}
-              disabled={tasks.crypto.status === 'loading'}
-              className="flex items-center gap-3 p-4 border rounded-xl hover:bg-yellow-50 transition disabled:opacity-50"
-            >
-              {getStatusIcon(tasks.crypto.status)}
-              <div className="text-left">
-                <div className="font-semibold">🪙 加密货币</div>
-                <div className="text-sm text-gray-500">{tasks.crypto.message}</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => runTask('gold', '/api/crypto?type=gold')}
-              disabled={tasks.gold.status === 'loading'}
-              className="flex items-center gap-3 p-4 border rounded-xl hover:bg-amber-50 transition disabled:opacity-50"
-            >
-              {getStatusIcon(tasks.gold.status)}
-              <div className="text-left">
-                <div className="font-semibold">💛 黄金价格</div>
-                <div className="text-sm text-gray-500">{tasks.gold.message}</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => runTask('email', '/api/email')}
-              disabled={tasks.email.status === 'loading'}
-              className="flex items-center gap-3 p-4 border rounded-xl hover:bg-purple-50 transition disabled:opacity-50"
-            >
-              {getStatusIcon(tasks.email.status)}
-              <div className="text-left">
-                <div className="font-semibold">📧 发送邮件</div>
-                <div className="text-sm text-gray-500">{tasks.email.message}</div>
-              </div>
-            </button>
+            {Object.entries(taskInfo).map(([key, info]) => {
+              const task = tasks[key as keyof typeof tasks]
+              return (
+                <div key={key} className="border rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => runTask(key)}
+                    disabled={task.status === 'loading'}
+                    className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition disabled:opacity-50"
+                  >
+                    {getStatusIcon(task.status)}
+                    <div className="text-left flex-1">
+                      <div className="font-semibold">{info.name}</div>
+                      <div className="text-sm text-gray-500">{task.message}</div>
+                    </div>
+                  </button>
+                  
+                  {/* 结果展开区域 */}
+                  {task.data && (
+                    <div className="border-t bg-gray-50">
+                      <button
+                        onClick={() => toggleExpanded(key)}
+                        className="w-full flex items-center justify-between px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                      >
+                        <span>查看结果</span>
+                        {expanded[key] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                      
+                      {expanded[key] && (
+                        <div className="p-4 border-t">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs text-gray-500">数据预览</span>
+                            <button
+                              onClick={() => copyToClipboard(key)}
+                              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+                            >
+                              {copied === key ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                              {copied === key ? '已复制' : '复制'}
+                            </button>
+                          </div>
+                          <pre className="bg-white p-3 rounded text-xs overflow-auto max-h-48 whitespace-pre-wrap">
+                            {JSON.stringify(task.data, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
 
-        {/* 结果展示 */}
-        {Object.entries(tasks).some(([_, t]) => t.data) && (
-          <div className="card">
-            <h2 className="text-xl font-semibold mb-4">📋 执行结果</h2>
-            <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-96 text-xs">
-              {JSON.stringify(
-                Object.fromEntries(
-                  Object.entries(tasks).filter(([_, t]) => t.data)
-                ),
-                null,
-                2
-              )}
-            </pre>
+        {/* 快速数据预览 */}
+        <div className="card">
+          <h2 className="text-xl font-semibold mb-4">📊 快速预览</h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {Object.entries(tasks).map(([key, task]) => {
+              const info = taskInfo[key as keyof typeof taskInfo]
+              return (
+                <div key={key} className={`p-4 rounded-lg border ${
+                  task.status === 'success' ? 'bg-green-50 border-green-200' :
+                  task.status === 'error' ? 'bg-red-50 border-red-200' :
+                  'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="font-semibold mb-1">{info.name}</div>
+                  <div className="text-sm text-gray-600">{task.message}</div>
+                  {task.data && (
+                    <div className="mt-2 text-xs text-gray-500">
+                      {Array.isArray(task.data) ? `${task.data.length} 条数据` : '已有数据'}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
