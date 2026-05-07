@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ExternalLink, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ExternalLink, TrendingUp, TrendingDown, Minus, Settings } from 'lucide-react'
 
 type TaskStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -19,72 +19,108 @@ const taskInfo = {
   email: { name: '📧 发送邮件', description: 'HTML 格式化结果推送', endpoint: '/api/email' },
 }
 
+function TrendIcon({ type }: { type: 'up' | 'down' | 'neutral' }) {
+  if (type === 'up') return <TrendingUp className="w-5 h-5" />
+  if (type === 'down') return <TrendingDown className="w-5 h-5" />
+  return <Minus className="w-5 h-5" />
+}
+
 function GitHubDataView({ data }: { data: any }) {
-  if (!data || !data.trending) return <div className="text-gray-500">暂无数据</div>
+  // 处理不同的数据结构
+  const repos = Array.isArray(data) ? data : data?.trending || data?.githubTrending || []
   
-  const repos = data.trending.slice(0, 5)
+  if (!repos || repos.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <div className="text-4xl mb-2">🔍</div>
+        <p className="font-semibold text-gray-600">暂无 GitHub 趋势数据</p>
+        <p className="text-sm text-gray-400 mt-1">可能在获取数据时出现问题</p>
+      </div>
+    )
+  }
+  
+  const displayRepos = repos.slice(0, 5)
   
   return (
     <div className="space-y-3">
-      {repos.map((repo: any, idx: number) => (
-        <div key={idx} className="border rounded-lg p-3 bg-white">
+      {displayRepos.map((repo: any, idx: number) => (
+        <div key={idx} className="border rounded-lg p-4 bg-gradient-to-r from-white to-blue-50">
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <h4 className="font-semibold text-blue-600">{repo.name}</h4>
+              <h4 className="font-semibold text-blue-600 text-lg">{repo.name}</h4>
               {repo.description && (
                 <p className="text-sm text-gray-600 mt-1 line-clamp-2">{repo.description}</p>
               )}
             </div>
-            <a href={repo.url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500 ml-2">
-              <ExternalLink className="w-4 h-4" />
+            <a href={repo.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 ml-2">
+              <ExternalLink className="w-5 h-5" />
             </a>
           </div>
-          <div className="flex gap-4 mt-2 text-sm">
-            <span className="text-yellow-500">⭐ {repo.stars}</span>
-            <span className="text-green-500">+{repo.starsIncrease} 今日</span>
-            {repo.language && <span className="text-gray-500">📁 {repo.language}</span>}
+          <div className="flex gap-4 mt-3 text-sm items-center">
+            <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-semibold">
+              ⭐ {repo.stars}
+            </span>
+            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">
+              +{repo.starsIncrease} 今日
+            </span>
+            {repo.language && (
+              <span className="text-gray-500">📁 {repo.language}</span>
+            )}
           </div>
           {repo.tags && repo.tags.length > 0 && (
-            <div className="flex gap-2 mt-2 flex-wrap">
-              {repo.tags.slice(0, 3).map((tag: string, i: number) => (
-                <span key={i} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">{tag}</span>
+            <div className="flex gap-2 mt-3 flex-wrap">
+              {repo.tags.slice(0, 4).map((tag: string, i: number) => (
+                <span key={i} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">{tag}</span>
               ))}
             </div>
           )}
         </div>
       ))}
+      {repos.length > 5 && (
+        <p className="text-center text-gray-400 text-sm">还有 {repos.length - 5} 个项目...</p>
+      )}
     </div>
   )
 }
 
 function StockDataView({ data }: { data: any }) {
-  if (!data || !data.stocks || data.stocks.length === 0) {
+  const stocks = data?.stocks || data || []
+  
+  if (!stocks || stocks.length === 0) {
     return (
-      <div className="text-center py-4 text-gray-500">
-        <p>暂无股票数据</p>
-        <p className="text-sm mt-1">请在设置页面配置 Alpha Vantage API Key</p>
+      <div className="text-center py-6">
+        <div className="text-4xl mb-2">📊</div>
+        <p className="font-semibold text-gray-600">暂无股票数据</p>
+        <div className="mt-3 p-3 bg-yellow-50 rounded-lg">
+          <p className="text-sm text-yellow-700">⚠️ 需要配置 Alpha Vantage API Key</p>
+          <a href="/settings" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-2">
+            <Settings className="w-4 h-4" />
+            去设置页面配置
+          </a>
+        </div>
       </div>
     )
   }
   
-  const stocks = data.stocks.slice(0, 5)
+  const displayStocks = stocks.slice(0, 5)
   
   return (
     <div className="space-y-2">
-      {stocks.map((stock: any, idx: number) => {
-        const change = stock.changePercent || 0
-        const TrendIcon = change > 0 ? TrendingUp : change < 0 ? TrendingDown : Minus
-        const trendColor = change > 0 ? 'text-green-500' : change < 0 ? 'text-red-500' : 'text-gray-500'
+      {displayStocks.map((stock: any, idx: number) => {
+        const change = stock.changePercent || stock.change || 0
+        const trendType = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral'
         
         return (
-          <div key={idx} className="flex justify-between items-center border-b pb-2">
+          <div key={idx} className="flex justify-between items-center p-3 bg-white rounded-lg border">
             <div>
-              <span className="font-semibold">{stock.symbol}</span>
-              <span className="text-sm text-gray-500 ml-2">{stock.name || stock.symbol}</span>
+              <span className="font-bold text-lg">{stock.symbol}</span>
+              <span className="text-sm text-gray-500 ml-2">{stock.name || stock.company || ''}</span>
             </div>
-            <div className={`flex items-center gap-1 ${trendColor}`}>
-              <TrendIcon className="w-4 h-4" />
-              <span>{change > 0 ? '+' : ''}{change.toFixed(2)}%</span>
+            <div className={`flex items-center gap-2 ${
+              change > 0 ? 'text-green-500' : change < 0 ? 'text-red-500' : 'text-gray-500'
+            }`}>
+              <TrendIcon type={trendType} />
+              <span className="font-bold text-lg">{change > 0 ? '+' : ''}{change.toFixed(2)}%</span>
             </div>
           </div>
         )
@@ -94,103 +130,146 @@ function StockDataView({ data }: { data: any }) {
 }
 
 function CryptoDataView({ data }: { data: any }) {
-  if (!data) return <div className="text-gray-500">暂无数据</div>
+  const btcData = data?.btc || data?.BTC || data
+  const ethData = data?.eth || data?.ETH
+  
+  if (!btcData && !ethData) {
+    return (
+      <div className="text-center py-6">
+        <div className="text-4xl mb-2">🪙</div>
+        <p className="font-semibold text-gray-600">暂无加密货币数据</p>
+        <div className="mt-3 p-3 bg-yellow-50 rounded-lg">
+          <p className="text-sm text-yellow-700">⚠️ 需要配置 Binance API</p>
+          <a href="/settings" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-2">
+            <Settings className="w-4 h-4" />
+            去设置页面配置
+          </a>
+        </div>
+      </div>
+    )
+  }
   
   return (
     <div className="space-y-4">
-      {data.btc && (
-        <div className="border rounded-lg p-4 bg-white">
+      {btcData && (
+        <div className="border-2 border-orange-200 rounded-xl p-4 bg-gradient-to-r from-orange-50 to-yellow-50">
           <div className="flex justify-between items-center">
             <div>
-              <h4 className="font-bold text-xl">₿ Bitcoin (BTC)</h4>
-              {data.btc.price && <p className="text-2xl font-bold text-green-600">${data.btc.price.toLocaleString()}</p>}
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">₿</span>
+                <h4 className="font-bold text-xl">Bitcoin (BTC)</h4>
+              </div>
+              {btcData.price && (
+                <p className="text-3xl font-bold text-orange-600 mt-1">${btcData.price.toLocaleString()}</p>
+              )}
             </div>
-            {data.btc.change !== undefined && (
-              <div className={`flex items-center gap-1 ${data.btc.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                <TrendIcon type={data.btc.change >= 0 ? 'up' : 'down'} />
-                <span className="font-bold">{data.btc.change >= 0 ? '+' : ''}{data.btc.change.toFixed(2)}%</span>
+            {btcData.changePercent !== undefined && (
+              <div className={`flex items-center gap-2 ${btcData.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <TrendIcon type={btcData.changePercent >= 0 ? 'up' : 'down'} />
+                <span className="font-bold text-xl">{btcData.changePercent >= 0 ? '+' : ''}{btcData.changePercent.toFixed(2)}%</span>
               </div>
             )}
           </div>
         </div>
       )}
-      {data.eth && (
-        <div className="border rounded-lg p-4 bg-white">
+      
+      {ethData && (
+        <div className="border-2 border-purple-200 rounded-xl p-4 bg-gradient-to-r from-purple-50 to-blue-50">
           <div className="flex justify-between items-center">
             <div>
-              <h4 className="font-bold text-xl">Ξ Ethereum (ETH)</h4>
-              {data.eth.price && <p className="text-2xl font-bold text-green-600">${data.eth.price.toLocaleString()}</p>}
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">Ξ</span>
+                <h4 className="font-bold text-xl">Ethereum (ETH)</h4>
+              </div>
+              {ethData.price && (
+                <p className="text-3xl font-bold text-purple-600 mt-1">${ethData.price.toLocaleString()}</p>
+              )}
             </div>
-            {data.eth.change !== undefined && (
-              <div className={`flex items-center gap-1 ${data.eth.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                <TrendIcon type={data.eth.change >= 0 ? 'up' : 'down'} />
-                <span className="font-bold">{data.eth.change >= 0 ? '+' : ''}{data.eth.change.toFixed(2)}%</span>
+            {ethData.changePercent !== undefined && (
+              <div className={`flex items-center gap-2 ${ethData.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <TrendIcon type={ethData.changePercent >= 0 ? 'up' : 'down'} />
+                <span className="font-bold text-xl">{ethData.changePercent >= 0 ? '+' : ''}{ethData.changePercent.toFixed(2)}%</span>
               </div>
             )}
           </div>
-        </div>
-      )}
-      {!data.btc && !data.eth && (
-        <div className="text-center py-4 text-gray-500">
-          <p>暂无加密货币数据</p>
-          <p className="text-sm mt-1">请在设置页面配置 Binance API</p>
         </div>
       )}
     </div>
   )
 }
 
-function TrendIcon({ type }: { type: 'up' | 'down' | 'neutral' }) {
-  if (type === 'up') return <TrendingUp className="w-5 h-5" />
-  if (type === 'down') return <TrendingDown className="w-5 h-5" />
-  return <Minus className="w-5 h-5" />
-}
-
 function GoldDataView({ data }: { data: any }) {
-  if (!data || !data.price) {
+  if (!data || (!data.price && !data.currentPrice)) {
     return (
-      <div className="text-center py-4 text-gray-500">
-        <p>暂无黄金数据</p>
-        <p className="text-sm mt-1">请在设置页面配置 API</p>
+      <div className="text-center py-6">
+        <div className="text-4xl mb-2">🥇</div>
+        <p className="font-semibold text-gray-600">暂无黄金数据</p>
+        <div className="mt-3 p-3 bg-yellow-50 rounded-lg">
+          <p className="text-sm text-yellow-700">⚠️ 需要配置相关 API</p>
+          <a href="/settings" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-2">
+            <Settings className="w-4 h-4" />
+            去设置页面配置
+          </a>
+        </div>
       </div>
     )
   }
   
+  const price = data.price || data.currentPrice || 0
+  const change = data.change || data.changePercent || 0
+  
   return (
     <div className="text-center py-4">
-      <div className="text-4xl mb-2">🥇</div>
+      <div className="text-5xl mb-2">🥇</div>
       <h4 className="font-bold text-xl">黄金价格</h4>
-      <p className="text-3xl font-bold text-yellow-600 mt-2">${data.price.toLocaleString()}</p>
-      {data.change !== undefined && (
-        <div className={`flex items-center justify-center gap-1 mt-2 ${data.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-          <TrendIcon type={data.change >= 0 ? 'up' : 'down'} />
-          <span>{data.change >= 0 ? '+' : ''}{data.change.toFixed(2)}%</span>
-        </div>
-      )}
+      <p className="text-4xl font-bold text-yellow-600 mt-2">${price.toLocaleString()}</p>
+      <div className={`flex items-center justify-center gap-2 mt-3 ${
+        change >= 0 ? 'text-green-500' : 'text-red-500'
+      }`}>
+        <TrendIcon type={change >= 0 ? 'up' : 'down'} />
+        <span className="font-bold text-lg">{change >= 0 ? '+' : ''}{change.toFixed(2)}%</span>
+      </div>
     </div>
   )
 }
 
 function EmailDataView({ data }: { data: any }) {
-  if (!data || data.sent === undefined) {
-    return <div className="text-gray-500">等待发送邮件</div>
-  }
-  
-  if (data.sent) {
+  if (data === undefined || data === null) {
     return (
       <div className="text-center py-4">
-        <div className="text-4xl mb-2">✅</div>
-        <p className="font-semibold text-green-600">邮件发送成功</p>
-        <p className="text-sm text-gray-500 mt-1">重试次数: {data.retries || 0}</p>
+        <div className="text-4xl mb-2">📧</div>
+        <p className="text-gray-500">等待发送邮件</p>
+      </div>
+    )
+  }
+  
+  const sent = data?.sent !== undefined ? data.sent : data?.success
+  
+  if (sent) {
+    return (
+      <div className="text-center py-4">
+        <div className="text-5xl mb-2">✅</div>
+        <p className="font-bold text-green-600 text-xl">邮件发送成功!</p>
+        {data.recipients && <p className="text-sm text-gray-500 mt-1">收件人: {data.recipients}</p>}
+        <p className="text-xs text-gray-400 mt-2">重试次数: {data.retries || 0}</p>
       </div>
     )
   }
   
   return (
     <div className="text-center py-4">
-      <div className="text-4xl mb-2">❌</div>
-      <p className="font-semibold text-red-600">邮件发送失败</p>
-      {data.error && <p className="text-sm text-gray-500 mt-1">{data.error}</p>}
+      <div className="text-5xl mb-2">❌</div>
+      <p className="font-bold text-red-600 text-xl">邮件发送失败</p>
+      {data.error && (
+        <p className="text-sm text-gray-500 mt-1">原因: {data.error}</p>
+      )}
+      <div className="mt-3 p-3 bg-yellow-50 rounded-lg">
+        <p className="text-sm text-yellow-700">⚠️ 请检查邮箱配置</p>
+        <a href="/settings" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-2">
+          <Settings className="w-4 h-4" />
+          去设置页面检查
+        </a>
+      </div>
     </div>
   )
 }
@@ -293,9 +372,9 @@ export default function ExecutePage() {
             const DataView = dataViews[key]
             
             return (
-              <div key={key} className={`card ${
-                task.status === 'success' ? 'border-green-300' :
-                task.status === 'error' ? 'border-red-300' :
+              <div key={key} className={`card border-2 ${
+                task.status === 'success' ? 'border-green-300 bg-green-50' :
+                task.status === 'error' ? 'border-red-300 bg-red-50' :
                 'border-gray-200'
               }`}>
                 <div className="flex items-center justify-between mb-4">
@@ -307,7 +386,7 @@ export default function ExecutePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`text-sm ${
+                    <span className={`text-sm font-semibold ${
                       task.status === 'success' ? 'text-green-600' :
                       task.status === 'error' ? 'text-red-600' :
                       'text-gray-500'
@@ -326,7 +405,7 @@ export default function ExecutePage() {
                 
                 {/* 数据展示区域 */}
                 {task.data && (
-                  <div className="border-t pt-4 mt-4">
+                  <div className="border-t border-gray-200 pt-4 mt-4">
                     <button
                       onClick={() => toggleExpanded(key)}
                       className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
