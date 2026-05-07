@@ -65,8 +65,8 @@ export default function Home() {
           <ul className="text-yellow-700 text-sm space-y-1">
             <li>• 所有数据基于 API 返回结果，禁止编造</li>
             <li>• 敏感信息存储在 .env.local（不提交到版本控制）</li>
-            <li>• 如 API 失败，标记"数据缺失"，禁止预测</li>
-            <li>• 结论必须基于数据，禁止模糊词如"可能"、"大概率"</li>
+            <li>• 如 API 失败，标记&ldquo;数据缺失&rdquo;，禁止预测</li>
+            <li>• 结论必须基于数据，禁止模糊词如&ldquo;可能&rdquo;、&ldquo;大概率&rdquo;</li>
           </ul>
         </div>
       </div>
