@@ -7,6 +7,7 @@ interface Config {
   stockApiKey: string
   binanceApiKey: string
   binanceSecret: string
+  minimaxApiKey: string
   emailHost: string
   emailPort: string
   emailUser: string
@@ -19,6 +20,7 @@ const defaultConfig: Config = {
   stockApiKey: '',
   binanceApiKey: '',
   binanceSecret: '',
+  minimaxApiKey: '',
   emailHost: 'smtp.gmail.com',
   emailPort: '587',
   emailUser: '',
@@ -75,6 +77,29 @@ export default function Settings() {
           )}
 
           <div className="space-y-6">
+            {/* MiniMax AI 配置 */}
+            <div className="border-b pb-4">
+              <h2 className="text-xl font-semibold mb-4 text-purple-600">🤖 AI 配置 (MiniMax)</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">MiniMax API Key</label>
+                  <div className="flex gap-2">
+                    <input
+                      type={visible.minimaxApiKey ? 'text' : 'password'}
+                      value={config.minimaxApiKey}
+                      onChange={(e) => handleChange('minimaxApiKey', e.target.value)}
+                      className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                      placeholder="您的 MiniMax API Key"
+                    />
+                    <button onClick={() => toggleVisible('minimaxApiKey')} className="px-4 py-2 border rounded-lg">
+                      👁️
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">用于 AI 专业解释功能</p>
+                </div>
+              </div>
+            </div>
+
             {/* GitHub 配置 */}
             <div className="border-b pb-4">
               <h2 className="text-xl font-semibold mb-4 text-blue-600">🐙 GitHub 配置</h2>

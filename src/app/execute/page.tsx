@@ -44,10 +44,15 @@ function GitHubDataView({ data }: { data: any }) {
   const handleExplain = async (idx: number, repo: any) => {
     setExplaining({ ...explaining, [idx]: true })
     try {
+      // 从 localStorage 获取 MiniMax API Key
+      const storedConfig = localStorage.getItem('tech-finance-config')
+      const config = storedConfig ? JSON.parse(storedConfig) : {}
+      const miniMaxApiKey = config.minimaxApiKey || ''
+      
       const response = await fetch('/api/explain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repo }),
+        body: JSON.stringify({ repo, apiKey: miniMaxApiKey }),
       })
       const result = await response.json()
       if (result.success) {
