@@ -72,7 +72,7 @@ ${stocks.slice(0, 5).map((s: any) => `${s.symbol}: $${s.price || 'N/A'} (${s.cha
           { role: 'user', content: prompt },
         ],
         temperature: 0.7,
-        max_tokens: 4000,
+        max_tokens: 2000,
       }),
     })
 
@@ -87,6 +87,10 @@ ${stocks.slice(0, 5).map((s: any) => `${s.symbol}: $${s.price || 'N/A'} (${s.cha
     console.error('AI 报告生成失败:', error)
     return `⚠️ AI 报告生成失败: ${error instanceof Error ? error.message : '未知错误'}`
   }
+}
+
+export async function GET(request: NextRequest) {
+  return POST(request)
 }
 
 export async function POST(request: NextRequest) {

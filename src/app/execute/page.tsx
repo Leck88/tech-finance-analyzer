@@ -17,7 +17,7 @@ const taskInfo = {
   stock: { name: '📊 股票数据', description: '追踪技术对股价的影响', endpoint: '/api/stock?symbol=NVDA,AMD,COIN,NVDA,AMD,COIN' },
   crypto: { name: '🪙 加密货币', description: 'BTC/ETH/XAU 实时数据分析', endpoint: '/api/crypto' },
   email: { name: '📧 发送邮件', description: 'HTML 格式化结果推送', endpoint: '/api/email' },
-  report: { name: '📋 综合报告', description: 'AI 生成涵盖A股、美股、加密货币的综合金融报告', endpoint: '/api/report' },
+  report: { name: '📋 综合报告', description: 'AI 生成涵盖A股、美股、加密货币的综合金融报告', endpoint: '/api/report', method: 'GET' },
 }
 
 function TrendIcon({ type }: { type: 'up' | 'down' | 'neutral' }) {
@@ -600,7 +600,10 @@ export default function ExecutePage() {
     }))
 
     try {
-      const response = await fetch(info.endpoint)
+      const method = (info as any).method || 'GET'
+      const response = method === 'POST' 
+        ? await fetch(info.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+        : await fetch(info.endpoint)
       const result = await response.json()
 
       if (result.success) {
