@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MiniMaxClient } from '@/lib/ai-clients/minimax'
+import { getConfig } from '@/lib/db/config'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,13 +14,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // 使用用户提供的 API Key 或环境变量
-    const miniMaxApiKey = apiKey || process.env.MINIMAX_API_KEY || ''
+    // 优先级: 请求参数 > 数据库 > 环境变量
+    const miniMaxApiKey = apiKey || getConfig('minimaxApiKey') || process.env.MINIMAX_API_KEY || ''
     
     if (!miniMaxApiKey) {
       return NextResponse.json({
         success: false,
-        error: '请先在设置页面配置 MiniMax API Key',
+        error: '请先配置 MiniMax API Key',
         needConfig: true,
       }, { status: 400 })
     }

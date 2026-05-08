@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import GitHubClient from '@/lib/api-clients/github'
 import { ApiResponse } from '@/types'
+import { getConfig } from '@/lib/db/config'
 
 export async function GET(request: NextRequest) {
   try {
-    const client = new GitHubClient(process.env.GITHUB_API_TOKEN || '')
+    // 从数据库获取 GitHub Token
+    const githubToken = getConfig('githubToken') || process.env.GITHUB_API_TOKEN || ''
+    
+    const client = new GitHubClient(githubToken)
     const data = await client.getTrendingRepositories()
 
     return NextResponse.json({
