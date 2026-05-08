@@ -4,25 +4,35 @@ import { ApiResponse } from '@/types'
 
 export async function GET(request: NextRequest) {
   try {
-    const symbol = request.nextUrl.searchParams.get('symbol') || 'BTC'
+    const type = request.nextUrl.searchParams.get('type')
+    
     const client = new CryptoClient(
       process.env.BINANCE_API_KEY || '',
       process.env.BINANCE_API_SECRET || ''
     )
 
-    if (symbol === 'GOLD') {
+    // 如果请求黄金数据
+    if (type === 'gold') {
       const data = await client.getGoldData()
       return NextResponse.json({
         success: true,
-        data,
+        data: data || { price: 0, changePercent: 0 },
         timestamp: new Date().toISOString(),
       } as ApiResponse<any>)
     }
 
-    const data = await client.getCryptoData(symbol as 'BTC' | 'ETH')
+    // 默认返回 BTC 和 ETH 数据
+    const [btc, eth] = await Promise.all([
+      client.getCryptoData('BTC'),
+      client.getCryptoData('ETH'),
+    ])
+
     return NextResponse.json({
       success: true,
-      data,
+      data: {
+        btc: btc || { price: 0, changePercent: 0, symbol: 'BTC' },
+        eth: eth || { price: 0, changePercent: 0, symbol: 'ETH' },
+      },
       timestamp: new Date().toISOString(),
     } as ApiResponse<any>)
   } catch (error) {
