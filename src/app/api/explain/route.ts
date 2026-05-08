@@ -40,23 +40,40 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const miniMaxApiKey = apiKey || process.env.MINIMAX_API_KEY || ''
+    // 使用 Zhipu API Key 或环境变量
+    const zhipuApiKey = apiKey || process.env.ZHIPU_API_KEY || ''
+    
+    // 如果没有 Zhipu API Key，回退到 MiniMax
+    const miniMaxApiKey = process.env.MINIMAX_API_KEY || ''
+    const effectiveApiKey = zhipuApiKey || miniMaxApiKey
 
-    if (!miniMaxApiKey) {
+    if (!effectiveApiKey) {
       return NextResponse.json({
         success: false,
-        error: 'Please configure MiniMax API Key',
+        error: 'Please configure AI API Key (ZHIPU_API_KEY or MINIMAX_API_KEY)',
         needConfig: true,
       }, { status: 400 })
     }
 
-    const { MiniMaxClient } = await import('@/lib/ai-clients/minimax')
-    const client = new MiniMaxClient(miniMaxApiKey)
-
     try {
-      const explanation = await client.generateExplanation(repo)
+      let explanation: string
+      
+      if (zhipuApiKey) {
+        // 使用智谱 AI
+        const { ZhipuClient } = await import('@/lib/ai-clients/zhipu')
+        const client = new ZhipuClient(zhipuApiKey)
+        explanation = await client.generateExplanation(repo)
+      } else if (miniMaxApiKey) {
+        // 使用 MiniMax
+        const { MiniMaxClient } = await import('@/lib/ai-clients/minimax')
+        const client = new MiniMaxClient(miniMaxApiKey)
+        explanation = await client.generateExplanation(repo)
+      } else {
+        throw new Error('No valid API key')
+      }
 
-      if (explanation.includes('AI service temporarily unavailable') || explanation.includes('System auto-generated')) {
+      // 检查是否返回了 fallback 内容
+      if (explanation.includes('AI 服务暂时不可用') || explanation.includes('系统自动生成')) {
         return NextResponse.json({
           success: true,
           data: {
@@ -75,7 +92,7 @@ export async function POST(request: NextRequest) {
         },
       })
     } catch (apiError) {
-      console.error('MiniMax API call failed:', apiError)
+      console.error('AI API call failed:', apiError)
       const fallbackExplanation = generateSimpleFallback(repo)
       return NextResponse.json({
         success: true,
