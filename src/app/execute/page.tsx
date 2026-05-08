@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ExternalLink, TrendingUp, TrendingDown, Minus, Settings, Sparkles, Brain, Copy, Check, Wand2 } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ExternalLink, TrendingUp, TrendingDown, Minus, Settings, Sparkles, Brain, Copy, Check, Wand2, FileText } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 
 type TaskStatus = 'idle' | 'loading' | 'success' | 'error'
@@ -15,9 +15,9 @@ interface TaskResult {
 const taskInfo = {
   github: { name: '🐙 GitHub 趋势', description: '获取全球 Top10 热门项目', endpoint: '/api/github' },
   stock: { name: '📊 股票数据', description: '追踪技术对股价的影响', endpoint: '/api/stock?symbol=NVDA,AMD,COIN,NVDA,AMD,COIN' },
-  crypto: { name: '🪙 加密货币', description: 'BTC/ETH 实时数据分析', endpoint: '/api/crypto' },
-  gold: { name: '💛 黄金价格', description: '美元指数、利率、地缘政治', endpoint: '/api/crypto?type=gold' },
+  crypto: { name: '🪙 加密货币', description: 'BTC/ETH/XAU 实时数据分析', endpoint: '/api/crypto' },
   email: { name: '📧 发送邮件', description: 'HTML 格式化结果推送', endpoint: '/api/email' },
+  report: { name: '📋 综合报告', description: 'AI 生成涵盖A股、美股、加密货币的综合金融报告', endpoint: '/api/report' },
 }
 
 function TrendIcon({ type }: { type: 'up' | 'down' | 'neutral' }) {
@@ -479,12 +479,107 @@ function EmailDataView({ data }: { data: any }) {
   )
 }
 
+function ReportDataView({ data }: { data: any }) {
+  if (!data) {
+    return (
+      <div className="text-center py-6">
+        <div className="text-4xl mb-2">📋</div>
+        <p className="font-semibold text-gray-600">暂无报告数据</p>
+      </div>
+    )
+  }
+
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyReport = async () => {
+    if (data.aiReport) {
+      try {
+        await navigator.clipboard.writeText(data.aiReport)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      } catch (err) {
+        console.error('复制失败:', err)
+      }
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* 快速数据概览 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-blue-50 rounded-lg p-3 text-center">
+          <div className="text-2xl">🐙</div>
+          <div className="text-sm text-gray-600">GitHub 项目</div>
+          <div className="font-bold text-blue-600">{data.github?.length || 0}</div>
+        </div>
+        <div className="bg-green-50 rounded-lg p-3 text-center">
+          <div className="text-2xl">📈</div>
+          <div className="text-sm text-gray-600">股票数量</div>
+          <div className="font-bold text-green-600">{data.stocks?.length || 0}</div>
+        </div>
+        <div className="bg-orange-50 rounded-lg p-3 text-center">
+          <div className="text-2xl">₿</div>
+          <div className="text-sm text-gray-600">BTC 价格</div>
+          <div className="font-bold text-orange-600">${data.crypto?.btc?.price?.toLocaleString() || 'N/A'}</div>
+        </div>
+        <div className="bg-purple-50 rounded-lg p-3 text-center">
+          <div className="text-2xl">🥇</div>
+          <div className="text-sm text-gray-600">XAU 价格</div>
+          <div className="font-bold text-purple-600">${data.crypto?.xau?.price?.toLocaleString() || 'N/A'}</div>
+        </div>
+      </div>
+
+      {/* AI 生成的综合报告 */}
+      {data.aiReport && (
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200 p-4">
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2">
+              <Brain className="w-5 h-5 text-indigo-600" />
+              <h4 className="font-bold text-indigo-700">🤖 AI 综合金融报告</h4>
+            </div>
+            <button
+              onClick={handleCopyReport}
+              className="flex items-center gap-1 px-3 py-1 text-sm text-indigo-600 bg-white rounded-lg hover:bg-indigo-100 transition"
+            >
+              {copied ? <><Check className="w-4 h-4" /> 已复制</> : <><Copy className="w-4 h-4" /> 复制报告</>}
+            </button>
+          </div>
+          <div className="bg-white rounded-lg p-4 prose prose-sm max-w-none">
+            <ReactMarkdown>{data.aiReport}</ReactMarkdown>
+          </div>
+        </div>
+      )}
+
+      {/* GitHub 热门项目列表 */}
+      {data.github && data.github.length > 0 && (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <span>🐙</span> GitHub Top 10 热门项目
+          </h4>
+          <div className="space-y-2">
+            {data.github.slice(0, 5).map((repo: any, idx: number) => (
+              <div key={idx} className="flex justify-between items-center bg-white rounded-lg p-2">
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-blue-600 text-sm">{repo.name}</span>
+                  <span className="text-xs text-gray-500 ml-2 truncate">{repo.description || '无描述'}</span>
+                </div>
+                <span className="text-yellow-500 text-sm font-bold ml-2">⭐ {repo.stars?.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const dataViews: Record<string, React.ComponentType<{ data: any }>> = {
   github: GitHubDataView,
   stock: StockDataView,
   crypto: CryptoDataView,
   gold: GoldDataView,
   email: EmailDataView,
+  report: ReportDataView,
 }
 
 export default function ExecutePage() {
@@ -492,8 +587,8 @@ export default function ExecutePage() {
     github: { status: 'idle', message: '等待执行' },
     stock: { status: 'idle', message: '等待执行' },
     crypto: { status: 'idle', message: '等待执行' },
-    gold: { status: 'idle', message: '等待执行' },
     email: { status: 'idle', message: '等待执行' },
+    report: { status: 'idle', message: '等待执行' },
   })
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
