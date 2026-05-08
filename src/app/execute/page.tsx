@@ -404,6 +404,9 @@ function CryptoDataView({ data }: { data: any }) {
 }
 
 function GoldDataView({ data }: { data: any }) {
+  const price = data?.price || data?.currentPrice || 0
+  const change = data?.change || data?.changePercent || 0
+  
   if (!data || (!data.price && !data.currentPrice)) {
     return (
       <div className="text-center py-6">
@@ -419,9 +422,6 @@ function GoldDataView({ data }: { data: any }) {
       </div>
     )
   }
-  
-  const price = data.price || data.currentPrice || 0
-  const change = data.change || data.changePercent || 0
   
   return (
     <div className="text-center py-4">
@@ -439,6 +439,8 @@ function GoldDataView({ data }: { data: any }) {
 }
 
 function EmailDataView({ data }: { data: any }) {
+  const sent = data?.sent !== undefined ? data.sent : data?.success
+  
   if (data === undefined || data === null) {
     return (
       <div className="text-center py-4">
@@ -447,8 +449,6 @@ function EmailDataView({ data }: { data: any }) {
       </div>
     )
   }
-  
-  const sent = data?.sent !== undefined ? data.sent : data?.success
   
   if (sent) {
     return (
@@ -480,6 +480,8 @@ function EmailDataView({ data }: { data: any }) {
 }
 
 function ReportDataView({ data }: { data: any }) {
+  const [copied, setCopied] = useState(false)
+  
   if (!data) {
     return (
       <div className="text-center py-6">
@@ -488,8 +490,6 @@ function ReportDataView({ data }: { data: any }) {
       </div>
     )
   }
-
-  const [copied, setCopied] = useState(false)
 
   const handleCopyReport = async () => {
     if (data.aiReport) {
