@@ -26,7 +26,6 @@ function TrendIcon({ type }: { type: 'up' | 'down' | 'neutral' }) {
 }
 
 function GitHubDataView({ data }: { data: any }) {
-  // 处理不同的数据结构
   const repos = Array.isArray(data) ? data : data?.trending || data?.githubTrending || []
   
   if (!repos || repos.length === 0) {
@@ -34,16 +33,13 @@ function GitHubDataView({ data }: { data: any }) {
       <div className="text-center py-6">
         <div className="text-4xl mb-2">🔍</div>
         <p className="font-semibold text-gray-600">暂无 GitHub 趋势数据</p>
-        <p className="text-sm text-gray-400 mt-1">可能在获取数据时出现问题</p>
       </div>
     )
   }
   
-  const displayRepos = repos.slice(0, 5)
-  
   return (
     <div className="space-y-3">
-      {displayRepos.map((repo: any, idx: number) => (
+      {repos.map((repo: any, idx: number) => (
         <div key={idx} className="border rounded-lg p-4 bg-gradient-to-r from-white to-blue-50">
           <div className="flex justify-between items-start">
             <div className="flex-1">
@@ -69,16 +65,14 @@ function GitHubDataView({ data }: { data: any }) {
           </div>
           {repo.tags && repo.tags.length > 0 && (
             <div className="flex gap-2 mt-3 flex-wrap">
-              {repo.tags.slice(0, 4).map((tag: string, i: number) => (
+              {repo.tags.map((tag: string, i: number) => (
                 <span key={i} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">{tag}</span>
               ))}
             </div>
           )}
         </div>
       ))}
-      {repos.length > 5 && (
-        <p className="text-center text-gray-400 text-sm">还有 {repos.length - 5} 个项目...</p>
-      )}
+      <p className="text-center text-gray-400 text-sm mt-2">共 {repos.length} 个项目</p>
     </div>
   )
 }
@@ -102,11 +96,9 @@ function StockDataView({ data }: { data: any }) {
     )
   }
   
-  const displayStocks = stocks.slice(0, 5)
-  
   return (
     <div className="space-y-2">
-      {displayStocks.map((stock: any, idx: number) => {
+      {stocks.map((stock: any, idx: number) => {
         const change = stock.changePercent || stock.change || 0
         const trendType = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral'
         
@@ -125,6 +117,7 @@ function StockDataView({ data }: { data: any }) {
           </div>
         )
       })}
+      <p className="text-center text-gray-400 text-sm mt-2">共 {stocks.length} 只股票</p>
     </div>
   )
 }
