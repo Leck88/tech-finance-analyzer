@@ -4,8 +4,14 @@ import { ApiResponse } from '@/types'
 
 export async function GET(request: NextRequest) {
   try {
-    const symbol = request.nextUrl.searchParams.get('symbol')
-    if (!symbol) {
+    const symbolParam = request.nextUrl.searchParams.get('symbol')
+    
+    // 如果没有提供 symbol，使用默认股票列表
+    const symbols = symbolParam 
+      ? symbolParam.split(',').filter(Boolean) 
+      : ['NVDA', 'AMD', 'COIN', 'AAPL', 'GOOGL']
+    
+    if (symbols.length === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -17,11 +23,23 @@ export async function GET(request: NextRequest) {
     }
 
     const client = new StockClient(process.env.STOCK_API_KEY || '')
-    const data = await client.getStockData(symbol)
+    
+    // 获取所有股票的涨跌幅数据
+    const stocks = []
+    for (const symbol of symbols.slice(0, 10)) { // 限制最多10个
+      try {
+        const data = await client.getStockData(symbol.trim())
+        if (data) {
+          stocks.push(data)
+        }
+      } catch (error) {
+        console.error(`Failed to get stock data for ${symbol}:`, error)
+      }
+    }
 
     return NextResponse.json({
       success: true,
-      data,
+      data: { stocks },
       timestamp: new Date().toISOString(),
     } as ApiResponse<any>)
   } catch (error) {
