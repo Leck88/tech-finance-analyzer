@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ExternalLink, TrendingUp, TrendingDown, Minus, Settings, Sparkles, Brain } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ExternalLink, TrendingUp, TrendingDown, Minus, Settings, Sparkles, Brain, Copy, Check, Wand2 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 
 type TaskStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -29,6 +30,8 @@ function GitHubDataView({ data }: { data: any }) {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
   const [explaining, setExplaining] = useState<Record<number, boolean>>({})
   const [explanations, setExplanations] = useState<Record<number, string>>({})
+  const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [batchExplaining, setBatchExplaining] = useState(false)
   
   const repos = Array.isArray(data) ? data : data?.trending || data?.githubTrending || []
   
@@ -42,12 +45,19 @@ function GitHubDataView({ data }: { data: any }) {
   }
 
   const handleExplain = async (idx: number, repo: any) => {
+    console.log('handleExplain called for', idx, repo)
+    if (!expanded[idx]) {
+      setExpanded({ ...expanded, [idx]: true })
+    }
+    
     setExplaining({ ...explaining, [idx]: true })
+    setExplanations((prev: Record<number, string>) => ({ ...prev, [idx]: '⏳ 正在生成专业分析...' }))
+    
     try {
-      // 从 localStorage 获取 MiniMax API Key
       const storedConfig = localStorage.getItem('tech-finance-config')
       const config = storedConfig ? JSON.parse(storedConfig) : {}
       const miniMaxApiKey = config.minimaxApiKey || ''
+      console.log('API Key present:', !!miniMaxApiKey)
       
       const response = await fetch('/api/explain', {
         method: 'POST',
@@ -55,17 +65,79 @@ function GitHubDataView({ data }: { data: any }) {
         body: JSON.stringify({ repo, apiKey: miniMaxApiKey }),
       })
       const result = await response.json()
-      if (result.success) {
-        setExplanations({ ...explanations, [idx]: result.data.explanation })
+      console.log('API response:', result)
+      
+      if (result.success && result.data?.explanation) {
+        setExplanations((prev: Record<number, string>) => ({ ...prev, [idx]: result.data.explanation }))
+      } else if (result.needConfig) {
+        setExplanations((prev: Record<number, string>) => ({ 
+          ...prev, 
+          [idx]: `⚠️ ${result.error}\n\n请先在设置页面配置 MiniMax API Key。\n\n**配置步骤：**\n1. 访问 /settings 页面\n2. 填入 MiniMax API Key\n3. 保存后重新点击"AI 专业解释"` 
+        }))
+      } else {
+        setExplanations((prev: Record<number, string>) => ({ 
+          ...prev, 
+          [idx]: `❌ ${result.error || '生成失败，请重试'}` 
+        }))
       }
     } catch (error) {
       console.error('解释生成失败:', error)
+      setExplanations((prev: Record<number, string>) => ({ 
+        ...prev, 
+        [idx]: '❌ 网络错误，请检查网络连接后重试' 
+      }))
     }
     setExplaining({ ...explaining, [idx]: false })
   }
-  
+
+  // 批量解释所有项目
+  const handleBatchExplain = async () => {
+    setBatchExplaining(true)
+    for (let idx = 0; idx < repos.length; idx++) {
+      if (!explaining[idx] && !explanations[idx]) {
+        await handleExplain(idx, repos[idx])
+        // 添加延迟以避免 API 限流
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+    }
+    setBatchExplaining(false)
+  }
+
+  // 复制到剪贴板
+  const handleCopy = async (idx: number, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedId(idx)
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch (err) {
+      console.error('复制失败:', err)
+    }
+  }
+
   return (
     <div className="space-y-3">
+      {/* 批量操作栏 */}
+      <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+        <span className="text-sm text-gray-600">共 {repos.length} 个项目</span>
+        <button
+          onClick={handleBatchExplain}
+          disabled={batchExplaining}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg text-sm hover:opacity-90 transition disabled:opacity-50"
+        >
+          {batchExplaining ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              批量生成中...
+            </>
+          ) : (
+            <>
+              <Wand2 className="w-4 h-4" />
+              一键 AI 解释全部
+            </>
+          )}
+        </button>
+      </div>
+
       {repos.map((repo: any, idx: number) => (
         <div key={idx} className="border rounded-lg p-4 bg-gradient-to-r from-white to-blue-50">
           <div className="flex justify-between items-start">
@@ -81,7 +153,7 @@ function GitHubDataView({ data }: { data: any }) {
           </div>
           <div className="flex gap-4 mt-3 text-sm items-center">
             <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-semibold">
-              ⭐ {repo.stars}
+              ⭐ {repo.stars?.toLocaleString()}
             </span>
             <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">
               +{repo.starsIncrease} 今日
@@ -101,7 +173,11 @@ function GitHubDataView({ data }: { data: any }) {
           {/* AI 解释按钮 */}
           <div className="mt-4 pt-3 border-t flex gap-2">
             <button
-              onClick={() => handleExplain(idx, repo)}
+              type="button"
+              onClick={() => {
+                console.log('Button clicked for idx:', idx)
+                handleExplain(idx, repo)
+              }}
               disabled={explaining[idx]}
               className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200 transition disabled:opacity-50"
             >
@@ -109,6 +185,11 @@ function GitHubDataView({ data }: { data: any }) {
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   生成中...
+                </>
+              ) : explanations[idx] ? (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  重新生成
                 </>
               ) : (
                 <>
@@ -130,12 +211,34 @@ function GitHubDataView({ data }: { data: any }) {
           {expanded[idx] && (
             <div className="mt-4 pt-3 border-t">
               {explanations[idx] ? (
-                <div className="bg-white p-4 rounded-lg border prose prose-sm max-w-none">
-                  <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                    <Brain className="w-3 h-3" />
-                    AI 自动生成的分析
+                <div className="bg-white p-4 rounded-lg border">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="text-xs text-purple-600 flex items-center gap-1">
+                      <Brain className="w-3 h-3" />
+                      AI 自动生成的分析
+                    </div>
+                    <button
+                      onClick={() => handleCopy(idx, explanations[idx])}
+                      className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition"
+                    >
+                      {copiedId === idx ? (
+                        <>
+                          <Check className="w-3 h-3 text-green-500" />
+                          已复制
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          复制
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <div className="whitespace-pre-wrap text-sm">{explanations[idx]}</div>
+                  <div className="prose prose-sm max-w-none">
+                    <ReactMarkdown>
+                      {explanations[idx]}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">点击"AI 专业解释"按钮生成分析内容</p>
@@ -144,7 +247,6 @@ function GitHubDataView({ data }: { data: any }) {
           )}
         </div>
       ))}
-      <p className="text-center text-gray-400 text-sm mt-2">共 {repos.length} 个项目</p>
     </div>
   )
 }
@@ -197,8 +299,9 @@ function StockDataView({ data }: { data: any }) {
 function CryptoDataView({ data }: { data: any }) {
   const btcData = data?.btc || data?.BTC || data
   const ethData = data?.eth || data?.ETH
+  const xauData = data?.xau || data?.XAU
   
-  if (!btcData && !ethData) {
+  if (!btcData && !ethData && !xauData) {
     return (
       <div className="text-center py-6">
         <div className="text-4xl mb-2">🪙</div>
@@ -257,6 +360,43 @@ function CryptoDataView({ data }: { data: any }) {
               </div>
             )}
           </div>
+        </div>
+      )}
+      
+      {xauData && (
+        <div className="border-2 border-yellow-200 rounded-xl p-4 bg-gradient-to-r from-yellow-50 to-amber-50">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🥇</span>
+                <h4 className="font-bold text-xl">Gold (XAU)</h4>
+              </div>
+              {xauData.price && (
+                <p className="text-3xl font-bold text-yellow-600 mt-1">${xauData.price.toLocaleString()}</p>
+              )}
+            </div>
+            {xauData.changePercent !== undefined && (
+              <div className={`flex items-center gap-2 ${xauData.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <TrendIcon type={xauData.changePercent >= 0 ? 'up' : 'down'} />
+                <span className="font-bold text-xl">{xauData.changePercent >= 0 ? '+' : ''}{xauData.changePercent.toFixed(2)}%</span>
+              </div>
+            )}
+          </div>
+          {xauData.drivers && (
+            <div className="mt-3 pt-3 border-t border-yellow-200">
+              <div className="flex flex-wrap gap-2 text-xs">
+                {xauData.drivers.dollarIndex && (
+                  <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">💵 {xauData.drivers.dollarIndex}</span>
+                )}
+                {xauData.drivers.interestRate && (
+                  <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">📊 {xauData.drivers.interestRate}</span>
+                )}
+                {xauData.drivers.geopoliticalRisk && (
+                  <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">🌍 {xauData.drivers.geopoliticalRisk}</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -21,10 +21,11 @@ export async function GET(request: NextRequest) {
       } as ApiResponse<any>)
     }
 
-    // 默认返回 BTC 和 ETH 数据
-    const [btc, eth] = await Promise.all([
+    // 默认返回 BTC、ETH 和 XAU 数据
+    const [btc, eth, xau] = await Promise.all([
       client.getCryptoData('BTC'),
       client.getCryptoData('ETH'),
+      client.getGoldData(),
     ])
 
     return NextResponse.json({
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
       data: {
         btc: btc || { price: 0, changePercent: 0, symbol: 'BTC' },
         eth: eth || { price: 0, changePercent: 0, symbol: 'ETH' },
+        xau: xau ? { ...xau, symbol: 'XAU' } : null,
       },
       timestamp: new Date().toISOString(),
     } as ApiResponse<any>)
