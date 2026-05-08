@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ExternalLink, TrendingUp, TrendingDown, Minus, Settings } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ExternalLink, TrendingUp, TrendingDown, Minus, Settings, Sparkles, Brain } from 'lucide-react'
 
 type TaskStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -26,6 +26,10 @@ function TrendIcon({ type }: { type: 'up' | 'down' | 'neutral' }) {
 }
 
 function GitHubDataView({ data }: { data: any }) {
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({})
+  const [explaining, setExplaining] = useState<Record<number, boolean>>({})
+  const [explanations, setExplanations] = useState<Record<number, string>>({})
+  
   const repos = Array.isArray(data) ? data : data?.trending || data?.githubTrending || []
   
   if (!repos || repos.length === 0) {
@@ -35,6 +39,24 @@ function GitHubDataView({ data }: { data: any }) {
         <p className="font-semibold text-gray-600">暂无 GitHub 趋势数据</p>
       </div>
     )
+  }
+
+  const handleExplain = async (idx: number, repo: any) => {
+    setExplaining({ ...explaining, [idx]: true })
+    try {
+      const response = await fetch('/api/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo }),
+      })
+      const result = await response.json()
+      if (result.success) {
+        setExplanations({ ...explanations, [idx]: result.data.explanation })
+      }
+    } catch (error) {
+      console.error('解释生成失败:', error)
+    }
+    setExplaining({ ...explaining, [idx]: false })
   }
   
   return (
@@ -68,6 +90,51 @@ function GitHubDataView({ data }: { data: any }) {
               {repo.tags.map((tag: string, i: number) => (
                 <span key={i} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">{tag}</span>
               ))}
+            </div>
+          )}
+          
+          {/* AI 解释按钮 */}
+          <div className="mt-4 pt-3 border-t flex gap-2">
+            <button
+              onClick={() => handleExplain(idx, repo)}
+              disabled={explaining[idx]}
+              className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200 transition disabled:opacity-50"
+            >
+              {explaining[idx] ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  生成中...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  AI 专业解释
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => setExpanded({ ...expanded, [idx]: !expanded[idx] })}
+              className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition"
+            >
+              {expanded[idx] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {expanded[idx] ? '收起' : '详情'}
+            </button>
+          </div>
+          
+          {/* 展开的详情 */}
+          {expanded[idx] && (
+            <div className="mt-4 pt-3 border-t">
+              {explanations[idx] ? (
+                <div className="bg-white p-4 rounded-lg border prose prose-sm max-w-none">
+                  <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                    <Brain className="w-3 h-3" />
+                    AI 自动生成的分析
+                  </div>
+                  <div className="whitespace-pre-wrap text-sm">{explanations[idx]}</div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">点击"AI 专业解释"按钮生成分析内容</p>
+              )}
             </div>
           )}
         </div>
