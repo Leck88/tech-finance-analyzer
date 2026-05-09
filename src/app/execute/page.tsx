@@ -17,6 +17,8 @@ const taskInfo = {
   stock: { name: '📊 股票数据', description: '追踪技术对股价的影响', endpoint: '/api/stock?symbol=NVDA,AMD,COIN,NVDA,AMD,COIN' },
   crypto: { name: '🪙 加密货币', description: 'BTC/ETH/XAU 实时数据分析', endpoint: '/api/crypto' },
   email: { name: '📧 发送邮件', description: 'HTML 格式化结果推送', endpoint: '/api/email' },
+  news: { name: '📰 市场新闻', description: '聚合全球路透、华尔街见闻核心资讯', endpoint: '/api/news' },
+  macro: { name: '🌐 宏观指标', description: '美元指数、美债收益率、恐慌指数', endpoint: '/api/macro' },
   report: { name: '📋 综合报告', description: 'AI 生成涵盖A股、美股、加密货币的综合金融报告', endpoint: '/api/report', method: 'GET' },
 }
 
@@ -573,12 +575,55 @@ function ReportDataView({ data }: { data: any }) {
   )
 }
 
+function NewsDataView({ data }: { data: any }) {
+  const news = data?.items || []
+  return (
+    <div className="space-y-3">
+      {news.map((item: any, idx: number) => (
+        <div key={idx} className="p-3 bg-white border rounded-lg hover:shadow-sm transition">
+          <div className="flex justify-between items-start gap-2">
+            <h5 className="font-bold text-sm text-gray-800">{item.title}</h5>
+            <span className={`text-xs px-2 py-0.5 rounded ${item.sentiment === 'bullish' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {item.sentiment === 'bullish' ? '多' : '空'}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">{item.summary}</p>
+          <div className="text-[10px] text-gray-400 mt-2 flex justify-between">
+            <span>来源: {item.source}</span>
+            <span>{item.time}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function MacroDataView({ data }: { data: any }) {
+  const indicators = [
+    { label: 'DXY 美元指数', value: data?.dxy, unit: '' },
+    { label: 'US10Y 十年美债', value: data?.us10y, unit: '%' },
+    { label: 'VIX 恐慌指数', value: data?.vix, unit: '' },
+  ]
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      {indicators.map((item, idx) => (
+        <div key={idx} className="bg-gray-800 text-white p-4 rounded-xl text-center">
+          <div className="text-xs text-gray-400 mb-1">{item.label}</div>
+          <div className="text-xl font-mono font-bold">{item.value || '--'}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const dataViews: Record<string, React.ComponentType<{ data: any }>> = {
   github: GitHubDataView,
   stock: StockDataView,
   crypto: CryptoDataView,
   gold: GoldDataView,
   email: EmailDataView,
+  news: NewsDataView,
+  macro: MacroDataView,
   report: ReportDataView,
 }
 
@@ -588,6 +633,8 @@ export default function ExecutePage() {
     stock: { status: 'idle', message: '等待执行' },
     crypto: { status: 'idle', message: '等待执行' },
     email: { status: 'idle', message: '等待执行' },
+    news: { status: 'idle', message: '等待执行' },
+    macro: { status: 'idle', message: '等待执行' },
     report: { status: 'idle', message: '等待执行' },
   })
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})

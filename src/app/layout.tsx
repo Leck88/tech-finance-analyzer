@@ -22,6 +22,8 @@ export default function RootLayout({
               <ul className="flex gap-6">
                 <li><Link href="/" className="text-gray-600 hover:text-blue-600">首页</Link></li>
                 <li><Link href="/dashboard" className="text-gray-600 hover:text-blue-600">仪表板</Link></li>
+                <li><Link href="/market" className="text-gray-600 hover:text-blue-600">📈 市场</Link></li>
+                <li><Link href="/skills" className="text-gray-600 hover:text-blue-600">🧠 技能</Link></li>
                 <li><Link href="/execute" className="text-gray-600 hover:text-blue-600">▶️ 执行</Link></li>
                 <li><Link href="/settings" className="text-gray-600 hover:text-blue-600">⚙️ 设置</Link></li>
               </ul>

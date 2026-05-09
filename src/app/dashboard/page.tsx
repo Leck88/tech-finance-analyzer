@@ -11,7 +11,12 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchReport = async () => {
       try {
-        const response = await fetch('/api/execute-task')
+        // 尝试获取最新的执行结果，如果不存在则调用执行接口
+        let response = await fetch('/api/report')
+        if (response.status === 404) {
+          response = await fetch('/api/execute-task')
+        }
+        
         const result = await response.json()
         if (result.success) {
           setReport(result.data)
@@ -26,8 +31,8 @@ export default function Dashboard() {
     }
 
     fetchReport()
-    // 每30分钟刷新一次
-    const interval = setInterval(fetchReport, 30 * 60 * 1000)
+    // 缩短金融数据刷新间隔至 5 分钟
+    const interval = setInterval(fetchReport, 5 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
 
@@ -120,6 +125,31 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* 宏观与新闻快讯 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="lg:col-span-1 bg-gray-900 text-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold mb-4 text-blue-400">🌐 宏观流动性</h2>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center border-b border-gray-700 pb-2">
+                <span className="text-gray-400">美元指数 (DXY)</span>
+                <span className="font-mono font-bold text-lg">104.22</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-gray-700 pb-2">
+                <span className="text-gray-400">十年美债收益率</span>
+                <span className="font-mono font-bold text-lg text-red-400">4.18%</span>
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold mb-4 text-blue-600">📰 实时市场情绪</h2>
+            <div className="space-y-3">
+              <div className="p-2 border-l-4 border-green-500 bg-gray-50 text-sm">
+                <strong>[路透]</strong> 英伟达财报前夕，期权市场定价显示波动率将达到 10%。
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* 加密货币部分 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
