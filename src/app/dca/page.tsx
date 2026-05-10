@@ -25,31 +25,19 @@ export default function DCAPage() {
   const [crypto, setCrypto] = useState<'BTC' | 'ETH' | 'both'>('BTC')
   const [avgCostBasis, setAvgCostBasis] = useState(65000)
   const [currentPrice, setCurrentPrice] = useState(85000)
-  const [result, setResult] = useState<DCAResult | null>(null)
-  const [loading, setLoading] = useState(false)
 
-  const performCalculation = () => {
-    // 计算投资次数
-    let investmentsPerMonth = frequency === 'daily' ? 30 : 
+  const calculateResult = () => {
+    const investmentsPerMonth = frequency === 'daily' ? 30 : 
                               frequency === 'weekly' ? 4.33 : 
                               frequency === 'biweekly' ? 2.17 : 1
     
     const totalInvestments = Math.floor(duration * investmentsPerMonth)
     const totalInvested = investmentAmount * totalInvestments
-    
-    // 计算购买数量（使用平均成本法）
     const totalCryptoAmount = totalInvested / avgCostBasis
-    
-    // 当前价值
     const currentValue = totalCryptoAmount * currentPrice
     const profit = currentValue - totalInvested
     const roi = totalInvested > 0 ? (profit / totalInvested) * 100 : 0
     
-    // 每年收益预测（基于历史平均年化收益）
-    const yearlyReturnRate = 0.5 // 假设年化50%
-    const yearlyProjection = totalInvested * yearlyReturnRate
-    
-    // 生成每月数据
     const monthlyData = []
     let runningInvested = 0
     let runningCrypto = 0
@@ -78,25 +66,13 @@ export default function DCAPage() {
       currentValue,
       profit,
       roi,
-      yearlyProjection,
+      yearlyProjection: totalInvested * 0.5,
       monthlyData
     }
   }
   
-  const calculate = () => {
-    setLoading(true)
-    setTimeout(() => {
-      const result = performCalculation()
-      setResult(result)
-      setLoading(false)
-    }, 300)
-  }
-
-  // 初始化计算
-  useEffect(() => {
-    const result = performCalculation()
-    setResult(result)
-  }, [investmentAmount, frequency, duration, crypto, avgCostBasis, currentPrice])
+  // 初始化和实时更新计算结果
+  const result = calculateResult()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -264,23 +240,11 @@ export default function DCAPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={calculate}
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {loading ? (
-                    <>
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      计算中...
-                    </>
-                  ) : (
-                    <>
-                      <Calculator className="w-5 h-5" />
-                      开始计算
-                    </>
-                  )}
-                </button>
+                <div className="bg-blue-50 p-4 rounded-xl text-center">
+                  <p className="text-sm text-blue-700">
+                    💡 结果实时计算，修改参数即可看到更新
+                  </p>
+                </div>
               </div>
             </div>
 
