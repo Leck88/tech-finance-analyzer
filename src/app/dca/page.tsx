@@ -28,9 +28,7 @@ export default function DCAPage() {
   const [result, setResult] = useState<DCAResult | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const calculate = () => {
-    setLoading(true)
-    
+  const performCalculation = () => {
     // 计算投资次数
     let investmentsPerMonth = frequency === 'daily' ? 30 : 
                               frequency === 'weekly' ? 4.33 : 
@@ -45,7 +43,7 @@ export default function DCAPage() {
     // 当前价值
     const currentValue = totalCryptoAmount * currentPrice
     const profit = currentValue - totalInvested
-    const roi = (profit / totalInvested) * 100
+    const roi = totalInvested > 0 ? (profit / totalInvested) * 100 : 0
     
     // 每年收益预测（基于历史平均年化收益）
     const yearlyReturnRate = 0.5 // 假设年化50%
@@ -70,7 +68,7 @@ export default function DCAPage() {
       })
     }
     
-    setResult({
+    return {
       totalInvested,
       totalInvestments,
       avgCostBasis,
@@ -82,14 +80,23 @@ export default function DCAPage() {
       roi,
       yearlyProjection,
       monthlyData
-    })
-    
-    setLoading(false)
+    }
+  }
+  
+  const calculate = () => {
+    setLoading(true)
+    setTimeout(() => {
+      const result = performCalculation()
+      setResult(result)
+      setLoading(false)
+    }, 300)
   }
 
+  // 初始化计算
   useEffect(() => {
-    calculate()
-  }, [])
+    const result = performCalculation()
+    setResult(result)
+  }, [investmentAmount, frequency, duration, crypto, avgCostBasis, currentPrice])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
