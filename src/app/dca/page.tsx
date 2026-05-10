@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Calculator, TrendingUp, TrendingDown, RefreshCw, DollarSign, Calendar, PieChart } from 'lucide-react'
 
 interface DCAResult {
@@ -97,13 +98,13 @@ export default function DCAPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <a href="/" className="text-2xl font-bold text-blue-600">📊 TechFinance</a>
+              <Link href="/" className="text-2xl font-bold text-blue-600">📊 TechFinance</Link>
               <span className="text-gray-400">|</span>
               <span className="text-blue-600 font-medium">DCA 定投计算器</span>
             </div>
-            <a href="/skills" className="text-gray-600 hover:text-blue-600 flex items-center gap-2">
+            <Link href="/skills" className="text-gray-600 hover:text-blue-600 flex items-center gap-2">
               ← 返回技能中心
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
