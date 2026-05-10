@@ -1,4 +1,5 @@
 import axios from 'axios'
+import crypto from 'crypto'
 
 const BINANCE_API_BASE = 'https://api.binance.com/api/v3'
 const BINANCE_DATA_API = 'https://data-api.binance.vision/api/v3'
@@ -387,6 +388,73 @@ export class BinanceClient {
     }
 
     return obv
+  }
+
+  // 查询账户余额
+  async getAccountBalance(): Promise<{
+    totalUSDValue: number
+    balances: Array<{
+      asset: string
+      free: string
+      locked: string
+      usdValue: number
+    }>
+  }> {
+    try {
+      const timestamp = Date.now()
+      const queryString = `timestamp=${timestamp}`
+      const signature = crypto
+        .createHmac('sha256', this.apiSecret)
+        .update(queryString)
+        .digest('hex')
+
+      const response = await axios.get(`${BINANCE_API_BASE}/account`, {
+        headers: {
+          'X-MBX-APIKEY': this.apiKey
+        },
+        params: {
+          timestamp,
+          signature
+        }
+      })
+
+      // 获取USDT价格用于计算USD价值
+      const prices = await this.getPrices()
+      const usdtPrice = parseFloat(prices['USDTUSDT'] || '1')
+
+      // 过滤出有余额的资产
+      const balances = response.data.balances
+        .filter((b: any) => parseFloat(b.free) > 0 || parseFloat(b.locked) > 0)
+        .map((b: any) => {
+          let usdValue = 0
+          if (b.asset === 'USDT' || b.asset === 'BUSD' || b.asset === 'USDC') {
+            usdValue = parseFloat(b.free) + parseFloat(b.locked)
+          } else {
+            const symbol = `${b.asset}USDT`
+            const price = parseFloat(prices[symbol] || '0')
+            usdValue = (parseFloat(b.free) + parseFloat(b.locked)) * price
+          }
+          return {
+            asset: b.asset,
+            free: b.free,
+            locked: b.locked,
+            usdValue
+          }
+        })
+
+      const totalUSDValue = balances.reduce((sum: number, b: any) => sum + b.usdValue, 0)
+
+      return {
+        totalUSDValue,
+        balances
+      }
+    } catch (error) {
+      console.error('Failed to fetch account balance:', error)
+      return {
+        totalUSDValue: 0,
+        balances: []
+      }
+    }
   }
 
   // 获取市场总览数据

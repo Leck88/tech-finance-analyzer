@@ -2,7 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Calculator, TrendingUp, TrendingDown, RefreshCw, DollarSign, Calendar, PieChart } from 'lucide-react'
+import { Calculator, TrendingUp, TrendingDown, RefreshCw, DollarSign, Calendar, PieChart, Wallet } from 'lucide-react'
+
+interface BalanceData {
+  totalUSDValue: number
+  balances: Array<{
+    asset: string
+    free: string
+    locked: string
+    usdValue: number
+  }>
+}
 
 interface DCAResult {
   totalInvested: number
@@ -25,6 +35,34 @@ export default function DCAPage() {
   const [crypto, setCrypto] = useState<'BTC' | 'ETH' | 'both'>('BTC')
   const [avgCostBasis, setAvgCostBasis] = useState(65000)
   const [currentPrice, setCurrentPrice] = useState(85000)
+  
+  // 余额状态
+  const [balance, setBalance] = useState<BalanceData | null>(null)
+  const [balanceLoading, setBalanceLoading] = useState(false)
+  const [balanceError, setBalanceError] = useState<string | null>(null)
+
+  // 获取余额
+  const fetchBalance = async () => {
+    setBalanceLoading(true)
+    setBalanceError(null)
+    try {
+      const response = await fetch('/api/balance')
+      const result = await response.json()
+      if (result.success) {
+        setBalance(result.data)
+      } else {
+        setBalanceError(result.error || '获取余额失败')
+      }
+    } catch (err) {
+      setBalanceError(err instanceof Error ? err.message : '网络错误')
+    } finally {
+      setBalanceLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchBalance()
+  }, [])
 
   const calculateResult = () => {
     const investmentsPerMonth = frequency === 'daily' ? 30 : 
@@ -101,6 +139,74 @@ export default function DCAPage() {
           <p className="text-gray-600 text-lg">
             Dollar Cost Averaging - 定期定额投资策略分析
           </p>
+        </div>
+
+        {/* 余额查询卡片 */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-green-500" />
+              HTX 账户余额
+            </h2>
+            <button
+              onClick={fetchBalance}
+              disabled={balanceLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 disabled:opacity-50 transition"
+            >
+              <RefreshCw className={`w-4 h-4 ${balanceLoading ? 'animate-spin' : ''}`} />
+              刷新
+            </button>
+          </div>
+          
+          {balanceLoading && !balance ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin">⏳</div>
+              <p className="text-gray-500 mt-2">正在查询余额...</p>
+            </div>
+          ) : balanceError ? (
+            <div className="text-center py-8 text-red-500">
+              <p>❌ {balanceError}</p>
+              <p className="text-sm mt-2">请检查 HTX API 密钥配置</p>
+            </div>
+          ) : balance ? (
+            <div>
+              <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white mb-6">
+                <div className="text-sm opacity-80">总资产 (USD)</div>
+                <div className="text-4xl font-bold mt-1">
+                  ${balance.totalUSDValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              
+              {balance.balances.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {balance.balances.map((item) => (
+                    <div key={item.asset} className="bg-gray-50 rounded-lg p-3">
+                      <div className="font-bold text-gray-900">{item.asset}</div>
+                      <div className="text-sm text-gray-600">
+                        {parseFloat(item.free).toLocaleString(undefined, { maximumFractionDigits: 8 })}
+                      </div>
+                      {parseFloat(item.locked) > 0 && (
+                        <div className="text-xs text-orange-500">
+                          锁定: {parseFloat(item.locked).toLocaleString(undefined, { maximumFractionDigits: 8 })}
+                        </div>
+                      )}
+                      <div className="text-xs text-green-600 mt-1">
+                        ≈ ${item.usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  暂无持仓
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              点击刷新按钮查询余额
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
