@@ -44,7 +44,7 @@ export class HTXClient {
       const params: Record<string, string> = {
         AccessKeyId: this.apiKey,
         SignatureMethod: 'HmacSHA256',
-        SignatureVersion: 2,
+        SignatureVersion: '2',
         Timestamp: timestamp,
       }
 
@@ -91,7 +91,7 @@ export class HTXClient {
       const params: Record<string, string> = {
         AccessKeyId: this.apiKey,
         SignatureMethod: 'HmacSHA256',
-        SignatureVersion: 2,
+        SignatureVersion: '2',
         Timestamp: timestamp,
       }
 
