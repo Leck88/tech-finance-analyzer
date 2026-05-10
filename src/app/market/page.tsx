@@ -115,6 +115,7 @@ function TechnicalAnalysis({ symbol }: { symbol: string }) {
 
   useEffect(() => {
     fetchTechnical()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol])
 
   if (loading) {

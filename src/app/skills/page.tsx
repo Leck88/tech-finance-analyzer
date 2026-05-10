@@ -7,7 +7,6 @@ import {
   ChevronDown, ChevronUp, Loader2, RefreshCw, AlertTriangle,
   Check, X, Info, Clock
 } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
 
 type SkillCategory = 'analysis' | 'risk' | 'strategy' | 'tools' | 'education'
 
