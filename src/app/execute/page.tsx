@@ -19,6 +19,7 @@ const taskInfo = {
   email: { name: '📧 发送邮件', description: 'HTML 格式化结果推送', endpoint: '/api/email' },
   news: { name: '📰 市场新闻', description: '聚合全球路透、华尔街见闻核心资讯', endpoint: '/api/news' },
   macro: { name: '🌐 宏观指标', description: '美元指数、美债收益率、恐慌指数', endpoint: '/api/macro' },
+  dca: { name: '💰 DCA 定投', description: '加密货币定期定额投资计划管理', endpoint: '/api/dca' },
   report: { name: '📋 综合报告', description: 'AI 生成涵盖A股、美股、加密货币的综合金融报告', endpoint: '/api/report', method: 'GET' },
 }
 
@@ -481,6 +482,91 @@ function EmailDataView({ data }: { data: any }) {
   )
 }
 
+
+function DCADataView({ data }: { data: any }) {
+  const plans = data?.plans || []
+  const stats = data?.stats || {}
+
+  const handleExecute = async (planId: string) => {
+    try {
+      const response = await fetch("/api/dca", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId, exchange: "huobi", side: "buy", type: "market" })
+      })
+      const result = await response.json()
+      if (result.success) {
+        alert("执行成功！订单ID: " + result.data?.order_id)
+      } else {
+        alert("执行失败: " + result.error)
+      }
+    } catch (error) {
+      alert("执行失败: 网络错误")
+    }
+  }
+
+  if (!data || plans.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <div className="text-5xl mb-3">💰</div>
+        <p className="font-semibold text-gray-600 mb-3">暂无 DCA 定投计划</p>
+        <a href="/dca" className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
+          💰 去 DCA 页面创建计划
+        </a>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div className="bg-orange-50 rounded-lg p-3 text-center">
+          <div className="text-sm text-gray-600">总订单</div>
+          <div className="font-bold text-xl text-orange-600">{(stats as any).total_orders || 0}</div>
+        </div>
+        <div className="bg-green-50 rounded-lg p-3 text-center">
+          <div className="text-sm text-gray-600">总投入</div>
+          <div className="font-bold text-xl text-green-600">${(stats as any).total_invested?.toFixed(2) || "0.00"}</div>
+        </div>
+        <div className="bg-blue-50 rounded-lg p-3 text-center">
+          <div className="text-sm text-gray-600">平均价格</div>
+          <div className="font-bold text-xl text-blue-600">${(stats as any).avg_price?.toFixed(2) || "0.00"}</div>
+        </div>
+        <div className="bg-purple-50 rounded-lg p-3 text-center">
+          <div className="text-sm text-gray-600">当前价格</div>
+          <div className="font-bold text-xl text-purple-600">${(stats as any).current_price?.toFixed(2) || "0.00"}</div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {plans.map((plan: any, idx: number) => (
+          <div key={idx} className="border rounded-lg p-4 bg-white">
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="font-bold text-lg">{(plan as any).symbol}</div>
+                <div className="text-sm text-gray-500">
+                  {(plan as any).side?.toUpperCase()} | {(plan as any).type} | 数量: {(plan as any).amount}
+                </div>
+                {(plan as any).last_executed && (
+                  <div className="text-xs text-gray-400 mt-1">
+                    上次执行: {new Date((plan as any).last_executed * 1000).toLocaleString("zh-CN")}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => handleExecute((plan as any).id)}
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition text-sm font-medium"
+              >
+                ▶ 执行
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ReportDataView({ data }: { data: any }) {
   const [copied, setCopied] = useState(false)
   
@@ -624,6 +710,7 @@ const dataViews: Record<string, React.ComponentType<{ data: any }>> = {
   email: EmailDataView,
   news: NewsDataView,
   macro: MacroDataView,
+  dca: DCADataView,
   report: ReportDataView,
 }
 
@@ -635,6 +722,7 @@ export default function ExecutePage() {
     email: { status: 'idle', message: '等待执行' },
     news: { status: 'idle', message: '等待执行' },
     macro: { status: 'idle', message: '等待执行' },
+    dca: { status: 'idle', message: '等待执行' },
     report: { status: 'idle', message: '等待执行' },
   })
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
