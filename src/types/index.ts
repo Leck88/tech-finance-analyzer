@@ -33,6 +33,16 @@ export interface CryptoData {
   timestamp: string
 }
 
+// 经济数据事件
+export interface EconEvent {
+  name: string
+  nameEn: string
+  nextDate: string
+  countdown: string
+  impact: '利多' | '利空' | '中性'
+  note: string
+}
+
 // 黄金价格相关类型
 export interface GoldData {
   price: number
@@ -45,6 +55,7 @@ export interface GoldData {
   }
   trend: 'up' | 'down' | 'stable'
   timestamp: string
+  econEvents?: EconEvent[]
 }
 
 // 分析结果类型

@@ -19,6 +19,7 @@ const taskInfo = {
   email: { name: '📧 发送邮件', description: 'HTML 格式化结果推送', endpoint: '/api/email' },
   news: { name: '📰 市场新闻', description: '聚合全球路透、华尔街见闻核心资讯', endpoint: '/api/news' },
   macro: { name: '🌐 宏观指标', description: '美元指数、美债收益率、恐慌指数', endpoint: '/api/macro' },
+  xau: { name: '🥇 黄金XAU分析', description: 'AI驱动的国际黄金价格走势分析预测', endpoint: '/api/xau' },
   dca: { name: '💰 DCA 定投', description: '加密货币定期定额投资计划管理', endpoint: '/api/dca' },
   report: { name: '📋 综合报告', description: 'AI 生成涵盖A股、美股、加密货币的综合金融报告', endpoint: '/api/report', method: 'GET' },
 }
@@ -662,9 +663,24 @@ function ReportDataView({ data }: { data: any }) {
 }
 
 function NewsDataView({ data }: { data: any }) {
-  const news = data?.items || []
+  const news = data?.news || []
+  const summary = data?.marketSummary || ''
+  const signals = data?.actionableSignals || []
   return (
     <div className="space-y-3">
+      {summary && (
+        <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg mb-4">
+          <p className="text-sm font-medium text-blue-800">{summary}</p>
+          {signals.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {signals.map((s: string, i: number) => {
+                const [newsPart, impactPart] = s.split('→')
+                return <p key={i} className="text-xs text-gray-600"><span className="font-medium text-indigo-600">{newsPart}</span> → <span className="text-gray-700">{impactPart}</span></p>
+              })}
+            </div>
+          )}
+        </div>
+      )}
       {news.map((item: any, idx: number) => (
         <div key={idx} className="p-3 bg-white border rounded-lg hover:shadow-sm transition">
           <div className="flex justify-between items-start gap-2">
@@ -686,9 +702,9 @@ function NewsDataView({ data }: { data: any }) {
 
 function MacroDataView({ data }: { data: any }) {
   const indicators = [
-    { label: 'DXY 美元指数', value: data?.dxy, unit: '' },
-    { label: 'US10Y 十年美债', value: data?.us10y, unit: '%' },
-    { label: 'VIX 恐慌指数', value: data?.vix, unit: '' },
+    { label: 'DXY 美元指数', value: data?.dollarIndex?.value || data?.dxy || '--', unit: '' },
+    { label: 'US10Y 十年美债', value: data?.us10yYield?.value || data?.us10y || '--', unit: '' },
+    { label: 'VIX 恐慌指数', value: data?.fearGreed?.value || data?.vix || '--', unit: '' },
   ]
   return (
     <div className="grid grid-cols-3 gap-4">
@@ -702,6 +718,87 @@ function MacroDataView({ data }: { data: any }) {
   )
 }
 
+function XAUDataView({ data }: { data: any }) {
+  const analysis = data?.analysis || {}
+  const keyDrivers = analysis.keyDrivers || []
+
+  if (!data?.price) {
+    return (
+      <div className="text-center py-6">
+        <div className="text-4xl mb-2">🥇</div>
+        <p className="text-gray-500">暂无黄金数据</p>
+      </div>
+    )
+  }
+
+  const trendColor = data.trend === 'up' ? 'text-green-500' : data.trend === 'down' ? 'text-red-500' : 'text-gray-500'
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-4 rounded-xl">
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="text-sm text-gray-500">黄金XAU/USD</p>
+            <p className="text-3xl font-bold text-yellow-600">${data.price?.toLocaleString()}</p>
+          </div>
+          <div className="text-right">
+            <div className={`text-2xl font-bold ${trendColor}`}>
+              {data.changePercent >= 0 ? '▲' : '▼'} {Math.abs(data.changePercent || 0).toFixed(2)}%
+            </div>
+            <p className="text-xs text-gray-400">{data.change >= 0 ? '+' : ''}{data.change?.toFixed(2)} USD</p>
+          </div>
+        </div>
+      </div>
+
+      {analysis.shortTerm && (
+        <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+          <p className="text-xs text-blue-500 font-medium mb-1">📌 短期判断</p>
+          <p className="text-sm text-blue-800">{analysis.shortTerm}</p>
+        </div>
+      )}
+      {analysis.mediumTerm && (
+        <div className="bg-indigo-50 border border-indigo-200 p-3 rounded-lg">
+          <p className="text-xs text-indigo-500 font-medium mb-1">📌 中期判断</p>
+          <p className="text-sm text-indigo-800">{analysis.mediumTerm}</p>
+        </div>
+      )}
+      {analysis.recommendation && (
+        <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+          <p className="text-xs text-green-500 font-medium mb-1">💡 操作建议</p>
+          <p className="text-sm text-green-800 font-medium">{analysis.recommendation}</p>
+        </div>
+      )}
+
+      {keyDrivers.length > 0 && (
+        <div>
+          <p className="text-xs text-gray-500 font-medium mb-2">⚙️ 关键驱动因素</p>
+          <div className="space-y-2">
+            {keyDrivers.map((d: any, i: number) => (
+              <div key={i} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg text-xs">
+                <span className="font-medium text-gray-700">{d.factor}</span>
+                <span className={`px-2 py-0.5 rounded ${d.impact === '利好' || d.impact === 'positive' ? 'bg-green-100 text-green-700' : d.impact === '利空' || d.impact === 'negative' ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-600'}`}>{d.impact}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {analysis.supportResistance && (
+        <div className="flex gap-4">
+          <div className="flex-1 bg-gray-800 text-white p-3 rounded-lg text-center">
+            <p className="text-xs text-gray-400">支撑位</p>
+            <p className="font-bold text-green-400">{analysis.supportResistance.support || '--'}</p>
+          </div>
+          <div className="flex-1 bg-gray-800 text-white p-3 rounded-lg text-center">
+            <p className="text-xs text-gray-400">阻力位</p>
+            <p className="font-bold text-red-400">{analysis.supportResistance.resistance || '--'}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const dataViews: Record<string, React.ComponentType<{ data: any }>> = {
   github: GitHubDataView,
   stock: StockDataView,
@@ -710,6 +807,7 @@ const dataViews: Record<string, React.ComponentType<{ data: any }>> = {
   email: EmailDataView,
   news: NewsDataView,
   macro: MacroDataView,
+  xau: XAUDataView,
   dca: DCADataView,
   report: ReportDataView,
 }
@@ -722,10 +820,12 @@ export default function ExecutePage() {
     email: { status: 'idle', message: '等待执行' },
     news: { status: 'idle', message: '等待执行' },
     macro: { status: 'idle', message: '等待执行' },
+    xau: { status: 'idle', message: '等待执行' },
     dca: { status: 'idle', message: '等待执行' },
     report: { status: 'idle', message: '等待执行' },
   })
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [recipientEmail, setRecipientEmail] = useState('leck@foxmail.com')
 
   const runTask = async (taskName: string) => {
     const info = taskInfo[taskName as keyof typeof taskInfo]
@@ -736,9 +836,13 @@ export default function ExecutePage() {
 
     try {
       const method = (info as any).method || 'GET'
-      const response = method === 'POST' 
-        ? await fetch(info.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-        : await fetch(info.endpoint)
+      let response
+      if (taskName === 'email' || taskName === 'report') {
+        const body = taskName === 'email' ? { recipients: recipientEmail } : { recipients: recipientEmail }
+        response = await fetch(info.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      } else {
+        response = method === 'POST' ? await fetch(info.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }) : await fetch(info.endpoint)
+      }
       const result = await response.json()
 
       if (result.success) {
@@ -801,6 +905,33 @@ export default function ExecutePage() {
               '▶️ 执行全部任务'
             )}
           </button>
+        </div>
+
+        {/* 收件人输入 */}
+        <div className="card mb-6 border-2 border-blue-200 bg-blue-50">
+          <div className="flex items-center gap-4 flex-wrap">
+            <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">📧 收件人邮箱:</label>
+            <input
+              type="email"
+              value={recipientEmail}
+              onChange={(e) => setRecipientEmail(e.target.value)}
+              placeholder="leck@foxmail.com"
+              className="flex-1 min-w-[200px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={() => runTask('email')}
+              disabled={tasks.email?.status === 'loading'}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {tasks.email?.status === 'loading' ? <><Loader2 className="w-4 h-4 animate-spin" />发送中...</> : '📧 发送报告'}
+            </button>
+          </div>
+          {tasks.email?.status === 'success' && tasks.email?.data?.sent && (
+            <p className="text-sm text-green-600 mt-2">✅ 邮件已发送至 {recipientEmail}</p>
+          )}
+          {tasks.email?.status === 'error' && (
+            <p className="text-sm text-red-600 mt-2">❌ {tasks.email?.message}</p>
+          )}
         </div>
 
         {/* 任务卡片展示 */}
