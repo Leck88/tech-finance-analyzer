@@ -36,16 +36,16 @@ export class StockClient {
       })
 
       const quote = response.data['Global Quote']
-      if (!quote || !quote.c) {
+      if (!quote || !quote['05. price']) {
         return null
       }
 
       return {
         symbol,
         company: this.getCompanyName(symbol),
-        lastPrice: parseFloat(quote.c),
-        changePercent: parseFloat(quote.pc),
-        change: parseFloat(quote.d),
+        lastPrice: parseFloat(quote['05. price']),
+        changePercent: parseFloat(quote['10. change percent']),
+        change: parseFloat(quote['09. change']),
         impactedBy: [],
         timestamp: new Date().toISOString(),
       }
