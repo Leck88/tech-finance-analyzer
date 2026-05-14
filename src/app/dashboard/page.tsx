@@ -11,12 +11,15 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchReport = async () => {
       try {
+        // Try /api/report first, fallback to /api/execute-task
         let response = await fetch('/api/report')
-        if (response.status === 404) {
+        let result = await response.json()
+        // If report returns empty/failed, try execute-task
+        if (!result.success || !result.data?.date || Object.keys(result.data).length === 0) {
           response = await fetch('/api/execute-task')
+          result = await response.json()
         }
-        const result = await response.json()
-        if (result.success) {
+        if (result.success && result.data?.date) {
           setReport(result.data)
         } else {
           setError(result.error || '数据加载失败')
