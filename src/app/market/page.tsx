@@ -544,7 +544,7 @@ export default function MarketPage() {
             {activeTab === 'technical' && (
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
-                  {['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT', 'DOTUSDT'].map(sym => (
+                  {['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT', 'DOTUSDT', 'XAUTUSDT'].map(sym => (
                     <button
                       key={sym}
                       onClick={() => setSelectedSymbol(sym)}

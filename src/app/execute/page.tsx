@@ -20,7 +20,6 @@ const taskInfo = {
   news: { name: '📰 市场新闻', description: '聚合全球路透、华尔街见闻核心资讯', endpoint: '/api/news' },
   macro: { name: '🌐 宏观指标', description: '美元指数、美债收益率、恐慌指数', endpoint: '/api/macro' },
   xau: { name: '🥇 黄金XAU分析', description: 'AI驱动的国际黄金价格走势分析预测', endpoint: '/api/xau' },
-  dca: { name: '💰 DCA 定投', description: '加密货币定期定额投资计划管理', endpoint: '/api/dca' },
   report: { name: '📋 综合报告', description: 'AI 生成涵盖A股、美股、加密货币的综合金融报告', endpoint: '/api/report', method: 'GET' },
 }
 
@@ -808,7 +807,7 @@ const dataViews: Record<string, React.ComponentType<{ data: any }>> = {
   news: NewsDataView,
   macro: MacroDataView,
   xau: XAUDataView,
-  dca: DCADataView,
+
   report: ReportDataView,
 }
 
@@ -821,7 +820,6 @@ export default function ExecutePage() {
     news: { status: 'idle', message: '等待执行' },
     macro: { status: 'idle', message: '等待执行' },
     xau: { status: 'idle', message: '等待执行' },
-    dca: { status: 'idle', message: '等待执行' },
     report: { status: 'idle', message: '等待执行' },
   })
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
