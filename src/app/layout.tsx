@@ -25,7 +25,6 @@ export default function RootLayout({
                 <li><Link href="/market" className="text-gray-600 hover:text-blue-600">📈 市场</Link></li>
                 <li><Link href="/skills" className="text-gray-600 hover:text-blue-600">🧠 技能</Link></li>
                 <li><Link href="/execute" className="text-gray-600 hover:text-blue-600">▶️ 执行</Link></li>
-                <li><Link href="/dca" className="text-gray-600 hover:text-blue-600">💰 定投</Link></li>
                 <li><Link href="/settings" className="text-gray-600 hover:text-blue-600">⚙️ 设置</Link></li>
               </ul>
             </div>

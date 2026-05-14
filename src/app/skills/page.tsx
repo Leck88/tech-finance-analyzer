@@ -96,16 +96,6 @@ const skills: FinancialSkill[] = [
     implemented: false
   },
   {
-    id: 'dca-calculator',
-    name: '定投计算器',
-    icon: '📅',
-    category: 'tools',
-    description: '计算定期定额投资的收益和成本',
-    features: ['DCA 收益计算', '最佳定投周期', '成本均价分析', '历史模拟'],
-    difficulty: 'beginner',
-    implemented: true
-  },
-  {
     id: 'converter',
     name: '货币转换器',
     icon: '💱',
@@ -158,111 +148,6 @@ function DifficultyBadge({ level }: { level: 'beginner' | 'intermediate' | 'adva
   return <span className={`text-xs px-2 py-0.5 rounded-full ${color}`}>{label}</span>
 }
 
-function DCACalculator() {
-  const [amount, setAmount] = useState(100)
-  const [frequency, setFrequency] = useState('weekly')
-  const [duration, setDuration] = useState(12)
-  const [result, setResult] = useState<any>(null)
-
-  const calculate = () => {
-    const weeksPerMonth = 4.33
-    const totalInvestments = frequency === 'weekly' 
-      ? Math.floor(duration * weeksPerMonth)
-      : frequency === 'biweekly'
-      ? Math.floor(duration * 2.17)
-      : duration
-
-    const totalInvested = amount * totalInvestments
-    const avgCostBasis = 65000 // 示例平均成本
-    const currentPrice = 85000 // 示例当前价格
-    const totalBTC = totalInvested / avgCostBasis
-    const currentValue = totalBTC * currentPrice
-    const profit = currentValue - totalInvested
-    const roi = (profit / totalInvested) * 100
-
-    setResult({
-      totalInvested,
-      totalInvestments,
-      totalBTC: totalBTC.toFixed(8),
-      avgCost: avgCostBasis.toFixed(2),
-      currentValue: currentValue.toFixed(2),
-      profit: profit.toFixed(2),
-      roi: roi.toFixed(2),
-    })
-  }
-
-  return (
-    <div className="bg-white rounded-xl shadow-md p-6 space-y-4">
-      <h3 className="text-lg font-bold flex items-center gap-2">
-        <Calculator className="w-5 h-5 text-blue-500" />
-        DCA 定投计算器
-      </h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">每次投入金额 ($)</label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">定投频率</label>
-          <select
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="weekly">每周</option>
-            <option value="biweekly">每两周</option>
-            <option value="monthly">每月</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">持续时间 (月)</label>
-          <input
-            type="number"
-            value={duration}
-            onChange={(e) => setDuration(Number(e.target.value))}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-
-      <button
-        onClick={calculate}
-        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-      >
-        计算
-      </button>
-
-      {result && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-          <div className="bg-blue-50 p-3 rounded-lg text-center">
-            <div className="text-xs text-blue-600">总投入</div>
-            <div className="font-bold text-lg">${result.totalInvested.toLocaleString()}</div>
-          </div>
-          <div className="bg-purple-50 p-3 rounded-lg text-center">
-            <div className="text-xs text-purple-600">总购买</div>
-            <div className="font-bold text-lg">{result.totalBTC} BTC</div>
-          </div>
-          <div className="bg-orange-50 p-3 rounded-lg text-center">
-            <div className="text-xs text-orange-600">平均成本</div>
-            <div className="font-bold text-lg">${result.avgCost}</div>
-          </div>
-          <div className={`p-3 rounded-lg text-center ${Number(result.profit) >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-            <div className={`text-xs ${Number(result.profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>预估收益</div>
-            <div className={`font-bold text-lg ${Number(result.profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {Number(result.profit) >= 0 ? '+' : ''}{result.roi}%
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 function PositionSizer() {
   const [accountSize, setAccountSize] = useState(10000)
@@ -676,7 +561,7 @@ export default function SkillsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
           <FearGreedIndex />
           <CurrencyConverter />
-          <DCACalculator />
+
           <PositionSizer />
         </div>
 

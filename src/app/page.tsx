@@ -23,7 +23,7 @@ export default function Home() {
               </button>
             </div>
             <iframe
-              src="http://129.226.152.47/dca/"
+              src=""
               className="flex-1 w-full border-0"
               title="DCA Calculator"
               sandbox="allow-scripts allow-same-origin allow-forms"
