@@ -1,36 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { X } from 'lucide-react'
+import {} from 'lucide-react'
 
 export default function Home() {
-  const [showDCA, setShowDCA] = useState(false)
 
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8">
-      {/* DCA 嵌入模态框 */}
-      {showDCA && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b bg-gradient-to-r from-blue-600 to-indigo-600">
-              <h2 className="text-xl font-bold text-white">💰 DCA 定投计算器</h2>
-              <button
-                onClick={() => setShowDCA(false)}
-                className="p-2 hover:bg-white/20 rounded-lg transition text-white"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <iframe
-              src=""
-              className="flex-1 w-full border-0"
-              title="DCA Calculator"
-              sandbox="allow-scripts allow-same-origin allow-forms"
-            />
-          </div>
-        </div>
-      )}
 
       <div className="max-w-5xl mx-auto">
         {/* Hero Section */}
@@ -61,12 +36,6 @@ export default function Home() {
             >
               🧠 金融技能
             </Link>
-            <button
-              onClick={() => setShowDCA(true)}
-              className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3 rounded-xl hover:from-orange-600 hover:to-red-600 transition shadow-lg"
-            >
-              💰 DCA 计算器
-            </button>
           </div>
         </div>
 
@@ -108,7 +77,7 @@ export default function Home() {
             <div className="bg-white rounded-2xl shadow-md p-6 border-2 border-transparent group-hover:border-orange-300 transition-all group-hover:shadow-lg">
               <div className="text-3xl mb-3">💱</div>
               <h3 className="text-lg font-bold mb-2 group-hover:text-orange-600 transition">货币转换 & 定投</h3>
-              <p className="text-gray-600 text-sm">实时汇率转换、DCA 定投计算器、投资收益预估</p>
+              <p className="text-gray-600 text-sm">实时汇率转换、投资收益预估</p>
             </div>
           </Link>
 
@@ -191,6 +160,5 @@ export default function Home() {
           </ul>
         </div>
       </div>
-    </div>
   )
 }
