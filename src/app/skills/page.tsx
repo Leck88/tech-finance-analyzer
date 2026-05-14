@@ -207,7 +207,7 @@ function CandlestickRecognizer() {
   useEffect(() => { fetchData() }, [])
 
   const intervals = ['1m', '5m', '15m', '1h', '4h', '1d']
-  const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT']
+  const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'XAUTUSDT']
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 space-y-5">
@@ -589,7 +589,7 @@ function BacktestEngine() {
     { value: 'combined', label: '组合策略 (MA+RSI)' },
   ]
   const intervals = ['1h', '4h', '1d']
-  const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT']
+  const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'XAUTUSDT', 'ADAUSDT']
   const m = data?.metrics
 
   return (
