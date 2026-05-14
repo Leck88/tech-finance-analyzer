@@ -230,11 +230,11 @@ function CandlestickRecognizer() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">K线数量</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1">K线数量（识别天数）</label>
           <select value={limit} onChange={e => setLimit(Number(e.target.value))} className="w-full px-3 py-2 border rounded-lg text-sm">
-            <option value={50}>50根</option>
-            <option value={100}>100根</option>
-            <option value={200}>200根</option>
+            <option value={50}>50根（约2天）</option>
+            <option value={100}>100根（约4天）</option>
+            <option value={200}>200根（约8天）</option>
           </select>
         </div>
         <div className="flex items-end">
