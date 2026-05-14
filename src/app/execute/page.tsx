@@ -761,6 +761,58 @@ export default function ExecutePage() {
   })
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [recipientEmail, setRecipientEmail] = useState('leck@foxmail.com')
+  const [workflowRunning, setWorkflowRunning] = useState(false)
+  const [workflowSteps, setWorkflowSteps] = useState<any[]>([])
+  const [workflowStage, setWorkflowStage] = useState('')
+  const [workflowDone, setWorkflowDone] = useState(false)
+  const [workflowSummary, setWorkflowSummary] = useState<any>(null)
+
+  const startWorkflow = async () => {
+    setWorkflowRunning(true)
+    setWorkflowDone(false)
+    setWorkflowSummary(null)
+    setWorkflowSteps([])
+    setWorkflowStage('🚀 启动工作流...')
+
+    try {
+      const response = await fetch('/api/workflow', { method: 'POST' })
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) throw new Error('No reader')
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const text = decoder.decode(value)
+        const lines = text.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              if (data.type === 'start' || data.type === 'progress') {
+                setWorkflowSteps(data.steps || [])
+                const running = (data.steps || []).find((s: any) => s.status === 'running')
+                if (running) setWorkflowStage(running.name)
+              } else if (data.type === 'complete') {
+                setWorkflowSummary(data.summary)
+                setWorkflowDone(true)
+              } else if (data.type === 'error') {
+                console.error('Workflow error:', data.error)
+              }
+            } catch {}
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Workflow failed:', error)
+    } finally {
+      setWorkflowRunning(false)
+      setWorkflowStage('')
+    }
+  }
 
   const runTask = async (taskName: string) => {
     const info = taskInfo[taskName as keyof typeof taskInfo]
@@ -823,13 +875,63 @@ export default function ExecutePage() {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 text-center">🎯 执行任务</h1>
 
-        {/* 一键执行所有 */}
-        <div className="card text-center mb-8">
-          <h2 className="text-xl font-semibold mb-4">一键执行</h2>
+        {/* 智能工作流 */}
+        <div className="card mb-8 border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+          <div className="text-center mb-4">
+            <h2 className="text-xl font-semibold">🚀 智能工作流</h2>
+            <p className="text-sm text-gray-500 mt-1">GitHub → AI分析 → 加密货币 → 宏观 → 股票 → 报告 → 邮件</p>
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <button
+              onClick={startWorkflow}
+              disabled={workflowRunning}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:opacity-90 transition disabled:opacity-50 w-full max-w-md"
+            >
+              {workflowRunning ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {workflowStage || '工作流执行中...'}
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  ▶️ 启动智能工作流
+                </span>
+              )}
+            </button>
+            {workflowRunning && workflowSteps.length > 0 && (
+              <div className="w-full max-w-lg space-y-2">
+                {workflowSteps.map((step: any, i: number) => (
+                  <div key={i} className="flex items-center gap-3 text-sm">
+                    <span className="w-6 text-center">
+                      {step.status === 'done' ? '✅' : step.status === 'running' ? '⏳' : step.status === 'error' ? '❌' : '⭕'}
+                    </span>
+                    <span className={'flex-1 ' + (step.status === 'running' ? 'font-bold text-purple-600' : step.status === 'done' ? 'text-green-600' : 'text-gray-400')}>
+                      {step.name}
+                    </span>
+                    <span className="text-xs text-gray-400">{step.description || ''}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {workflowDone && workflowSummary && (
+              <div className="w-full max-w-lg bg-white rounded-lg p-4 text-sm space-y-1">
+                <div className="font-semibold text-gray-700 mb-2">✅ 工作流完成</div>
+                {Object.entries(workflowSummary).map(([k, v]) => (
+                  <div key={k} className="flex gap-2"><span className="text-gray-500">{k}:</span><span className="text-gray-800">{String(v)}</span></div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 旧版并行执行 */}
+        <div className="card text-center mb-8 border border-gray-200">
+          <h2 className="text-xl font-semibold mb-4 text-gray-500">⚡ 旧版并行执行</h2>
           <button
             onClick={runAll}
             disabled={Object.values(tasks).some(t => t.status === 'loading')}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:opacity-90 transition disabled:opacity-50"
+            className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-8 py-3 rounded-xl font-bold hover:opacity-90 transition disabled:opacity-50"
           >
             {Object.values(tasks).some(t => t.status === 'loading') ? (
               <span className="flex items-center gap-2">
@@ -837,7 +939,7 @@ export default function ExecutePage() {
                 执行中...
               </span>
             ) : (
-              '▶️ 执行全部任务'
+              '▶️ 并行执行全部'
             )}
           </button>
         </div>
