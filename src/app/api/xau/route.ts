@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getConfig } from '@/lib/db/config'
 
-// 重要财经数据发布时间（UTC，转换为北京时间+8h）
 const ECON_EVENTS = [
   { name: "美国非农就业", name_en: "NFP", day: 7, hour: 20, minute: 30, note: "每月第一个周五", impact: "利多" },
   { name: "美国CPI通胀", name_en: "CPI", day: 13, hour: 20, minute: 30, note: "每月13日左右", impact: "利空" },
@@ -52,6 +51,25 @@ function getEconEvents() {
       note: ev.note
     }
   }).filter(Boolean)
+}
+
+function calcPrediction(price: number, changePercent: number, drivers: any) {
+  // ATR-based volatility estimation (conservative: 0.5%, normal: 1%, extreme: 2%)
+  const volBase = 0.005
+  let volMultiplier = 1.0
+  if (drivers) {
+    if (drivers.geopoliticalRisk?.includes('避险')) volMultiplier = 1.5
+    if (drivers.interestRate?.includes('降息')) volMultiplier = 1.3
+    if (drivers.dollarIndex?.includes('走强')) volMultiplier *= 1.2
+  }
+  // Scale by recent change magnitude
+  const changeFactor = 1 + Math.abs(changePercent) / 50
+  const conservative = price * volBase * volMultiplier * changeFactor
+  return {
+    conservative: { low: price - conservative, high: price + conservative },
+    normal: { low: price - conservative * 2, high: price + conservative * 2 },
+    extreme: { low: price - conservative * 4, high: price + conservative * 4 },
+  }
 }
 
 async function fetchXAUData() {
@@ -106,9 +124,20 @@ export async function GET() {
     const { xau, macro } = raw
     const analysis = await analyzeWithAI(xau, macro)
     const econEvents = getEconEvents()
+    const prediction = calcPrediction(xau.price || 0, xau.changePercent || 0, xau.drivers)
     return NextResponse.json({
       success: true,
-      data: { price: xau.price, change: xau.change, changePercent: xau.changePercent, trend: xau.trend, drivers: xau.drivers, macro: { dollarIndex: macro.dollarIndex?.value, us10yYield: macro.us10yYield?.value, fearGreed: macro.fearGreed?.value }, analysis, econEvents },
+      data: {
+        price: xau.price,
+        change: xau.change,
+        changePercent: xau.changePercent,
+        trend: xau.trend,
+        drivers: xau.drivers,
+        macro: { dollarIndex: macro.dollarIndex?.value, us10yYield: macro.us10yYield?.value, fearGreed: macro.fearGreed?.value },
+        analysis,
+        econEvents,
+        prediction,
+      },
       timestamp: new Date().toISOString()
     })
   } catch (error) {
