@@ -88,7 +88,7 @@ async function fetchXAUData() {
 }
 
 async function analyzeWithAI(xau: any, macro: any) {
-  const apiKey = getConfig('MINIMAX_API_KEY')
+  const apiKey = 'sk-d33bbc34c3be4384bd19b2c423a64455'
   const prompt = `你是一个国际黄金(XAU)分析师。当前数据如下：
 【价格数据】
 - 现价: ${xau.price || 'N/A'} USD
@@ -102,10 +102,10 @@ async function analyzeWithAI(xau: any, macro: any) {
 请给出JSON格式分析：{"shortTerm":"短期(30字)","mediumTerm":"中期(30字)","keyDrivers":[{"factor":"因素","impact":"利好/利空/中性","status":"状态"}],"supportResistance":{"support":"支撑","resistance":"阻力"},"recommendation":"建议(20字)"}`
 
   try {
-    const res = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
+    const res = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'MiniMax-M2', messages: [{ role: 'user', content: prompt }], max_tokens: 600, reasoning_disabled: true })
+      body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], max_tokens: 600 })
     })
     const data = await res.json()
     let content = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.message?.reasoning_content || ''
